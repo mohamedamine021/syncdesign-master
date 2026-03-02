@@ -83,7 +83,7 @@ export default function Step13() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-3 rounded-md bg-muted/50 border border-border">
               <p className="text-xs text-muted-foreground mb-2">Machine stable si</p>
-              <p className="text-sm text-foreground font-mono">S > 1.5</p>
+              <p className="text-sm text-foreground font-mono">S {'>'}  1.5</p>
               <p className="text-xs text-muted-foreground mt-1">Bonne marge d'instabilité</p>
             </div>
             <div className="p-3 rounded-md bg-muted/50 border border-border">
