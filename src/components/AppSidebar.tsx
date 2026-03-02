@@ -2,7 +2,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useMachineStore } from '@/store/machineStore';
 import {
   Settings, Calculator, Ruler, Layers, Magnet, Circle,
-  RotateCcw, Zap, BatteryCharging, BarChart3, ChevronLeft, ChevronRight
+  RotateCcw, Zap, BatteryCharging, BarChart3, ChevronLeft, ChevronRight,
+  AlertCircle, TrendingUp, Gauge
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -16,7 +17,11 @@ const STEPS = [
   { path: '/step/7', label: 'Rotor & Pôles', icon: RotateCcw, step: 7 },
   { path: '/step/8', label: 'Réactances', icon: Zap, step: 8 },
   { path: '/step/9', label: 'Excitation', icon: BatteryCharging, step: 9 },
-  { path: '/step/10', label: 'Dashboard', icon: BarChart3, step: 10 },
+  { path: '/step/10', label: 'Excitation en charge', icon: BarChart3, step: 10 },
+  { path: '/step/11', label: 'Paramètres dynamiques', icon: Zap, step: 11 },
+  { path: '/step/12', label: 'Court-circuit', icon: AlertCircle, step: 12 },
+  { path: '/step/13', label: 'Surcharge statique', icon: TrendingUp, step: 13 },
+  { path: '/step/14', label: 'Pertes & Rendement', icon: Gauge, step: 14 },
 ];
 
 export function AppSidebar() {
