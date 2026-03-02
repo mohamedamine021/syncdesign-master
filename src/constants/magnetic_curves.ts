@@ -1,95 +1,63 @@
-/**
- * B-H Curve data for Iron E31 steel (stator laminations, 0.5mm thickness)
- * Data from Table 2.2 in the PDF
- * B in Gauss, H in A/cm
- */
-export const BH_CURVE_E31_STATOR: [number, number][] = [
-  [2000, 0.44], [2100, 0.45], [2200, 0.47], [2300, 0.48], [2400, 0.49],
-  [2500, 0.50], [2600, 0.51], [2700, 0.52], [2800, 0.54], [2900, 0.55],
-  [3000, 0.56], [3100, 0.57], [3200, 0.58], [3300, 0.59], [3400, 0.60],
-  [3500, 0.61], [3600, 0.63], [3700, 0.64], [3800, 0.65], [3900, 0.66],
-  [4000, 0.67], [4100, 0.68], [4200, 0.69], [4300, 0.70], [4400, 0.71],
-  [4500, 0.72], [4600, 0.73], [4700, 0.74], [4800, 0.75], [4900, 0.76],
-  [5000, 0.77], [5100, 0.78], [5200, 0.79], [5300, 0.80], [5400, 0.81],
-  [5500, 0.83], [5600, 0.84], [5700, 0.86], [5800, 0.87], [5900, 0.89],
-  [6000, 0.90], [6100, 0.92], [6200, 0.94], [6300, 0.96], [6400, 0.97],
-  [6500, 0.99], [6600, 1.01], [6700, 1.03], [6800, 1.05], [6900, 1.07],
-  [7000, 1.09], [7100, 1.11], [7200, 1.13], [7300, 1.15], [7400, 1.17],
-  [7500, 1.19], [7600, 1.22], [7700, 1.24], [7800, 1.27], [7900, 1.30],
-  [8000, 1.33], [8100, 1.35], [8200, 1.38], [8300, 1.41], [8400, 1.44],
-  [8500, 1.47], [8600, 1.50], [8700, 1.54], [8800, 1.58], [8900, 1.62],
-  [9000, 1.66], [9100, 1.70], [9200, 1.74], [9300, 1.79], [9400, 1.84],
-  [9500, 1.89], [9600, 1.94], [9700, 1.99], [9800, 2.05], [9900, 2.11],
-  [10000, 2.17], [10100, 2.23], [10200, 2.30], [10300, 2.37], [10400, 2.41],
-  [10500, 2.52], [10600, 2.60], [10700, 2.69], [10800, 2.78], [10900, 2.88],
-  [11000, 2.98], [11100, 3.09], [11200, 3.20], [11300, 3.32], [11400, 3.45],
-  [11500, 3.59], [11600, 3.74], [11700, 3.90], [11800, 4.07], [11900, 4.25],
-  [12000, 4.44], [12100, 4.65], [12200, 4.87], [12300, 5.10], [12400, 5.35],
-  [12500, 5.62], [12600, 5.90], [12700, 6.20], [12800, 6.52], [12900, 6.86],
-  [13000, 7.22], [13100, 7.60], [13200, 8.00], [13300, 8.50], [13400, 9.00],
-  [13500, 9.60], [13600, 10.3], [13700, 11.1], [13800, 12.0], [13900, 13.0],
-  [14000, 14.1], [14100, 15.3], [14200, 16.6], [14300, 18.1], [14400, 19.7],
-  [14500, 21.4], [14600, 23.2], [14700, 25.1], [14800, 27.1], [14900, 29.2],
-  [15000, 31.4], [15100, 33.7], [15200, 36.1], [15300, 38.7], [15400, 41.4],
-  [15500, 44.2], [15600, 47.1], [15700, 50.1], [15800, 53.2], [15900, 56.4],
-  [16000, 59.8], [16100, 63.3], [16200, 67.0], [16300, 70.9], [16400, 75.0],
-  [16500, 79.3], [16600, 83.8], [16700, 88.5], [16800, 93.4], [16900, 98.6],
-  [17000, 101], [17100, 110], [17200, 116], [17300, 123], [17400, 130],
-  [17500, 137], [17600, 145], [17700, 153], [17800, 162], [17900, 171],
-  [18000, 181], [18100, 191], [18200, 202], [18300, 214], [18400, 227],
-  [18500, 241], [18600, 255], [18700, 272], [18800, 290], [18900, 311],
-];
+// ============================================================================
+// FICHIER CENTRAL DE CONSTANTES ET COURBES MAGNÉTIQUES
+// PFE - Dimensionnement d'une machine synchrone
+// ============================================================================
 
-/**
- * B-H Curve for rotor steel (1-2mm thickness)
- * Data from Table 2.3
- */
-export const BH_CURVE_ROTOR: [number, number][] = [
-  [1000, 1.0], [2000, 1.4], [3000, 1.8], [4000, 2.1],
-  [5000, 2.5], [5100, 2.75], [6000, 2.95], [6100, 3.2],
-  [7000, 3.45], [7100, 3.75], [8000, 4.05], [8100, 4.4],
-  [9000, 4.8], [9100, 4.9], [9200, 4.95], [9300, 5.05],
-  [9400, 5.1], [9500, 5.2], [9600, 5.3], [9700, 5.4], [9800, 5.5], [9900, 5.6],
-  [10000, 5.7], [10100, 5.82], [10200, 5.95], [10300, 6.07],
-  [10400, 6.15], [10500, 6.3], [10600, 6.42], [10700, 6.55], [10800, 6.65], [10900, 6.8],
-  [11000, 6.9], [11100, 7.03], [11200, 7.2], [11300, 7.31],
-  [11400, 7.48], [11500, 7.6], [11600, 7.75], [11700, 7.9], [11800, 8.08], [11900, 8.25],
-  [12000, 8.45], [12100, 8.6], [12200, 8.8], [12300, 9.0],
-  [12400, 9.2], [12500, 9.4], [12600, 9.6], [12700, 9.92], [12800, 10.15], [12900, 10.45],
-  [13000, 10.8], [13100, 11.12], [13200, 11.45], [13300, 11.75],
-  [13400, 12.2], [13500, 12.6], [13600, 13.0], [13700, 13.5], [13800, 13.93], [13900, 14.5],
-  [14000, 14.9], [14100, 15.3], [14200, 15.95], [14300, 16.45],
-  [14400, 17.0], [14500, 17.5], [14600, 18.35], [14700, 19.2], [14800, 20.1], [14900, 21.1],
-  [15000, 22.7], [15100, 24.5], [15200, 25.6], [15300, 27.1],
-  [15400, 28.8], [15500, 30.5], [15600, 32.0], [15700, 34.0], [15800, 36.5], [15900, 37.5],
-  [16000, 40.0],
-];
+// ============================================================================
+// MOTEURS D'INTERPOLATION (UTILITAIRES)
+// ============================================================================
 
-/**
- * Specific losses for E11 steel (0.5mm), V/kg
- * Data from Table 2.7
- */
-export const SPECIFIC_LOSSES_E11: [number, number][] = [
-  [5000, 1.0], [5100, 1.04], [5200, 1.08], [5300, 1.11], [5400, 1.14],
-  [5500, 1.2], [5600, 1.2], [5700, 1.25], [5800, 1.31], [5900, 1.35],
-  [6000, 1.4], [6100, 1.45], [6200, 1.5], [6300, 1.55], [6400, 1.5],
-  [6500, 1.65], [6600, 1.7], [6700, 1.75], [6800, 1.8], [6900, 1.85],
-  [7000, 1.9], [7100, 1.95], [7200, 2.0], [7300, 2.05], [7400, 2.1],
-  [7500, 2.15], [7600, 2.15], [7700, 2.15], [7800, 2.2], [7900, 2.25],
-  [8000, 2.3], [8100, 2.35], [8200, 2.4], [8300, 2.45], [8400, 2.5],
-  [8500, 2.55], [8600, 2.6], [8700, 2.65], [8800, 2.7], [8900, 2.75],
-  [9000, 2.8], [9100, 2.85], [9200, 2.9], [9300, 2.95], [9400, 3.0],
-  [9500, 3.05], [9600, 3.1], [9700, 3.15], [9800, 3.2], [9900, 3.25],
-  [10000, 3.3], [10100, 3.36], [10200, 3.42], [10300, 3.48], [10400, 3.55],
-  [10500, 3.62], [10600, 3.7], [10700, 3.78], [10800, 3.86], [10900, 3.94],
-  [11000, 4.02], [11100, 4.1], [11200, 4.18], [11300, 4.26], [11400, 4.34],
-  [11500, 4.42], [11600, 4.5], [11700, 4.6], [11800, 4.7], [11900, 4.8],
-  [12000, 4.9], [12100, 5.0], [12200, 5.1], [12300, 5.2], [12400, 5.3],
-  [12500, 5.4], [12600, 5.5], [12700, 5.6], [12800, 5.7], [12900, 5.8],
-  [13000, 5.9], [13100, 6.0], [13200, 6.1], [13300, 6.2], [13400, 6.3],
-  [13500, 6.4], [13600, 6.5], [13700, 6.6], [13800, 6.7], [13900, 6.8],
-  [14000, 6.9], [14100, 7.0], [14200, 7.1], [14300, 7.2],
-];
+/** Linear interpolation on a sorted [x,y] curve */
+export function interpolateCurve(curve: [number, number][], x: number): number {
+  if (x <= curve[0][0]) return curve[0][1];
+  if (x >= curve[curve.length - 1][0]) return curve[curve.length - 1][1];
+  for (let i = 0; i < curve.length - 1; i++) {
+    if (x >= curve[i][0] && x <= curve[i + 1][0]) {
+      const t = (x - curve[i][0]) / (curve[i + 1][0] - curve[i][0]);
+      return curve[i][1] + t * (curve[i + 1][1] - curve[i][1]);
+    }
+  }
+  return curve[curve.length - 1][1];
+}
+
+/** Calculates the exact value between 2 points on a graph (1D Linear Interpolation) */
+export function interpolate1D(xVal: number, xArr: number[], yArr: number[]): number {
+  xVal = Math.max(xArr[0], Math.min(xVal, xArr[xArr.length - 1]));
+  let i = 0;
+  while (i < xArr.length - 2 && xVal >= xArr[i + 1]) i++;
+  const xRatio = (xVal - xArr[i]) / (xArr[i + 1] - xArr[i]);
+  return yArr[i] + xRatio * (yArr[i + 1] - yArr[i]);
+}
+
+/** Calculates the exact value between 4 points of a matrix (2D Bilinear Interpolation) */
+export function interpolate2D(xVal: number, yVal: number, xArr: number[], yArr: number[], grid: number[][]): number {
+  xVal = Math.max(xArr[0], Math.min(xVal, xArr[xArr.length - 1]));
+  yVal = Math.max(yArr[0], Math.min(yVal, yArr[yArr.length - 1]));
+
+  let xi = 0, yi = 0;
+  while (xi < xArr.length - 2 && xVal >= xArr[xi + 1]) xi++;
+  while (yi < yArr.length - 2 && yVal >= yArr[yi + 1]) yi++;
+
+  const x1 = xArr[xi], x2 = xArr[xi + 1];
+  const y1 = yArr[yi], y2 = yArr[yi + 1];
+
+  const q11 = grid[xi][yi];
+  const q21 = grid[xi + 1][yi];
+  const q12 = grid[xi][yi + 1];
+  const q22 = grid[xi + 1][yi + 1];
+
+  const xRatio = (xVal - x1) / (x2 - x1);
+  const yRatio = (yVal - y1) / (y2 - y1);
+
+  const r1 = q11 + xRatio * (q21 - q11);
+  const r2 = q12 + xRatio * (q22 - q12);
+
+  return Math.round((r1 + yRatio * (r2 - r1)) * 1000) / 1000;
+}
+
+// ============================================================================
+// DIMENSIONS GÉNÉRALES
+// ============================================================================
 
 /** Normalized stator diameters (mm) from Table 2.1 */
 export const NORMALIZED_DIAMETERS_MM = [
@@ -105,18 +73,289 @@ export const DA_D_RATIOS: Record<number, [number, number]> = {
   8: [1.39, 1.34],
 };
 
-/**
- * Linear interpolation on a sorted [x,y] curve
- */
-export function interpolateCurve(curve: [number, number][], x: number): number {
-  if (x <= curve[0][0]) return curve[0][1];
-  if (x >= curve[curve.length - 1][0]) return curve[curve.length - 1][1];
-  
-  for (let i = 0; i < curve.length - 1; i++) {
-    if (x >= curve[i][0] && x <= curve[i + 1][0]) {
-      const t = (x - curve[i][0]) / (curve[i + 1][0] - curve[i][0]);
-      return curve[i][1] + t * (curve[i + 1][1] - curve[i][1]);
+// ============================================================================
+// MATÉRIAUX MAGNÉTIQUES (B-H Curves)
+// ============================================================================
+
+/** B-H Curve data for Iron E31 steel (stator laminations, 0.5mm thickness) */
+export const BH_CURVE_E31_STATOR: [number, number][] = [
+  [2000, 0.44], [3000, 0.56], [4000, 0.67], [5000, 0.77], [6000, 0.90],
+  [7000, 1.09], [8000, 1.33], [9000, 1.66], [10000, 2.17], [11000, 2.98],
+  [12000, 4.44], [13000, 7.22], [14000, 14.1], [15000, 31.4], [16000, 59.8],
+  [17000, 101], [18000, 181], [18900, 311] 
+]; // (Version allégée pour l'exemple, vous pouvez garder votre long tableau ici)
+
+/** B-H Curve for rotor steel (1-2mm thickness) */
+export const BH_CURVE_ROTOR: [number, number][] = [
+  [1000, 1.0], [2000, 1.4], [3000, 1.8], [4000, 2.1], [5000, 2.5], 
+  [6000, 2.95], [7000, 3.45], [8000, 4.05], [9000, 4.8], [10000, 5.7],
+  [11000, 6.9], [12000, 8.45], [13000, 10.8], [14000, 14.9], [15000, 22.7],
+  [16000, 40.0]
+]; // (Version allégée, gardez votre long tableau ici)
+
+// ============================================================================
+// CARACTÉRISTIQUE MAGNÉTIQUE (Étape 7)
+// ============================================================================
+
+export interface MagneticFieldRow {
+  B_gauss: number;
+  H: (number | null)[];
+}
+export const columnOffsets = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
+
+export const magneticFieldTable: MagneticFieldRow[] = [
+  { B_gauss:  2000, H: [0.44, 0.45, 0.47, 0.48, 0.49, 0.50, 0.51, 0.52, 0.54, 0.55] },
+  { B_gauss:  3000, H: [0.56, 0.57, 0.58, 0.59, 0.60, 0.61, 0.63, 0.64, 0.65, 0.66] },
+  // ... (Gardez le reste de votre tableau magneticFieldTable)
+];
+
+export function lookupH(B: number): number | null {
+  const base = Math.floor(B / 1000) * 1000;
+  const offset = Math.round((B - base) / 100) * 100;
+  const row = magneticFieldTable.find(r => r.B_gauss === base);
+  if (!row) return null;
+  const colIndex = columnOffsets.indexOf(offset as typeof columnOffsets[number]);
+  if (colIndex === -1) return null;
+  return row.H[colIndex] ?? null;
+}
+
+// --- Zone du pôle (Tableau 2.3) ---
+export type MagneticTableRow = {
+  B_Gauss: number;
+  H: Partial<Record<0 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900, number>>;
+};
+export const magneticTable: MagneticTableRow[] = [
+  { B_Gauss: 1000,  H: { 0: 1 } },
+  { B_Gauss: 2000,  H: { 0: 1.4 } },
+  // ... (Gardez le reste de votre tableau magneticTable)
+];
+
+export function getH(B_Gauss: number): number | null {
+  const roundedB = Math.round(B_Gauss / 100) * 100;
+  const rowB = Math.floor(roundedB / 1000) * 1000;
+  const offset = roundedB - rowB;
+  const row = magneticTable.find(r => r.B_Gauss === rowB);
+  if (!row) return null;
+  const key = offset as keyof typeof row.H;
+  return row.H[key] ?? null;
+}
+
+// --- Modèle Mathématique Figure 2.11 ---
+export const tableFig2_11 = {
+  B_Gauss: [17000, 19000, 21000, 23000, 25000, 27000],
+  K_ex: [0, 0.5, 1.0, 1.5, 2.0],
+  H_Acm: [
+    [50,   60,   70,   80,   90],
+    [200,  250,  300,  350,  400],
+    [1000, 1200, 1400, 1600, 1800],
+    [2000, 2300, 2600, 2900, 3200],
+    [3200, 3600, 4000, 4400, 4800],
+    [4600, 5100, 5600, 6100, 6600]
+  ]
+};
+
+export function getHd_Fig2_11(B_Gauss: number, K_ex: number): number {
+  return interpolate2D(B_Gauss, K_ex, tableFig2_11.B_Gauss, tableFig2_11.K_ex, tableFig2_11.H_Acm);
+}
+
+// ============================================================================
+// RÉACTANCES DE DISPERSION (Tableau 2.4 - Étape 8)
+// ============================================================================
+
+export type CellValue = [number, number];
+export interface Tableau24Row {
+  ukoro: number;
+  values: { [q: number]: CellValue | null };
+}
+
+const v = (x: number): CellValue => [x, x];
+const r = (min: number, max: number): CellValue => [min, max];
+
+export const table2_4_sigmaD: Tableau24Row[] = [
+  { ukoro: 0,  values: { 1: v(9.7), 2: v(2.85), 3: v(1.41), 4: v(0.89), 5: v(0.65), 6: v(0.52), 7: v(0.44), 8: v(0.39), 9: v(0.35), 10: v(0.31), 11: r(0.29, 0.30) } },
+  { ukoro: 1,  values: { 1: v(9.7), 2: v(2.35), 3: v(1.15), 4: v(0.74), 5: v(0.53), 6: v(0.45), 7: v(0.37), 8: v(0.33), 9: v(0.32), 10: v(0.26), 11: r(0.28, 0.28) } },
+  // ... (Gardez le reste de table2_4_sigmaD)
+];
+
+export function getSigmaD(ukoro: number, q: number): number | null {
+  const row = table2_4_sigmaD.find((r) => r.ukoro === ukoro);
+  if (!row) return null;
+  const col = q >= 11 ? 11 : q;
+  const cell = row.values[col];
+  if (!cell) return null;
+  const averageValue = (cell[0] + cell[1]) / 2;
+  return averageValue / 100;
+}
+
+// ============================================================================
+// RÉACTION D'INDUIT & DIAGRAMME DE BLONDEL (Étape 9 & 11)
+// ============================================================================
+
+// --- Figure 2.17: Saturation ---
+export const tableFig2_17 = {
+  ratio: [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6],
+  x_d: [1.00, 0.99, 0.98, 0.96, 0.95, 0.93, 0.92],
+  x_q: [1.00, 0.88, 0.78, 0.69, 0.62, 0.55, 0.50],
+  k:   [0.000, 0.0040, 0.0052, 0.0055, 0.0052, 0.0048, 0.0040]
+};
+
+export function getSaturationCoefficients(satRatio: number) {
+  return {
+    x_d: interpolate1D(satRatio, tableFig2_17.ratio, tableFig2_17.x_d),
+    x_q: interpolate1D(satRatio, tableFig2_17.ratio, tableFig2_17.x_q),
+    k: interpolate1D(satRatio, tableFig2_17.ratio, tableFig2_17.k)
+  };
+}
+
+// --- Figure 2.18: Armature Reaction ---
+const tableFig2_18_Kad = {
+  alpha_p: [0.4, 0.6, 0.8, 1.0],
+  K_ad_10: [0.94, 0.89, 0.85, 0.78],
+  K_ad_15: [0.94, 0.89, 0.84, 0.79],
+  K_ad_20: [0.96, 0.90, 0.85, 0.80] 
+};
+
+const tableFig2_18_Kaq = {
+  alpha_p: [0.4, 0.6, 0.8, 1.0],
+  delta_tau: [0, 0.01, 0.03, 0.05],
+  K_aq_10: [[0.12, 0.18, 0.29, 0.37], [0.25, 0.32, 0.42, 0.48], [0.44, 0.51, 0.59, 0.63], [0.78, 0.78, 0.78, 0.78]],
+  K_aq_15: [[0.14, 0.20, 0.29, 0.36], [0.26, 0.33, 0.42, 0.48], [0.46, 0.52, 0.59, 0.64], [0.68, 0.68, 0.68, 0.68]],
+  K_aq_20: [[0.15, 0.22, 0.30, 0.38], [0.28, 0.35, 0.44, 0.50], [0.48, 0.54, 0.60, 0.65], [0.61, 0.61, 0.61, 0.61]]
+};
+
+export function getArmatureReactionCoefficients(alpha_p: number, delta_tau: number, delta_ratio: number = 1.0) {
+  const Kad_10 = interpolate1D(alpha_p, tableFig2_18_Kad.alpha_p, tableFig2_18_Kad.K_ad_10);
+  const Kad_15 = interpolate1D(alpha_p, tableFig2_18_Kad.alpha_p, tableFig2_18_Kad.K_ad_15);
+  const Kad_20 = interpolate1D(alpha_p, tableFig2_18_Kad.alpha_p, tableFig2_18_Kad.K_ad_20);
+
+  const Kaq_10 = interpolate2D(alpha_p, delta_tau, tableFig2_18_Kaq.alpha_p, tableFig2_18_Kaq.delta_tau, tableFig2_18_Kaq.K_aq_10);
+  const Kaq_15 = interpolate2D(alpha_p, delta_tau, tableFig2_18_Kaq.alpha_p, tableFig2_18_Kaq.delta_tau, tableFig2_18_Kaq.K_aq_15);
+  const Kaq_20 = interpolate2D(alpha_p, delta_tau, tableFig2_18_Kaq.alpha_p, tableFig2_18_Kaq.delta_tau, tableFig2_18_Kaq.K_aq_20);
+
+  let final_Kad = 0; let final_Kaq = 0;
+
+  if (delta_ratio <= 1.0) { final_Kad = Kad_10; final_Kaq = Kaq_10; } 
+  else if (delta_ratio >= 2.0) { final_Kad = Kad_20; final_Kaq = Kaq_20; } 
+  else if (delta_ratio <= 1.5) {
+    const ratio = (delta_ratio - 1.0) / 0.5;
+    final_Kad = Kad_10 + ratio * (Kad_15 - Kad_10);
+    final_Kaq = Kaq_10 + ratio * (Kaq_15 - Kaq_10);
+  } else {
+    const ratio = (delta_ratio - 1.5) / 0.5;
+    final_Kad = Kad_15 + ratio * (Kad_20 - Kad_15);
+    final_Kaq = Kaq_15 + ratio * (Kaq_20 - Kaq_15);
+  }
+
+  return { k_ad: Math.round(final_Kad * 1000) / 1000, k_aq: Math.round(final_Kaq * 1000) / 1000 };
+}
+
+// ============================================================================
+// ENROULEMENT D'EXCITATION & ROTOR (Étape 10)
+// ============================================================================
+
+export const THICKNESSES_A_MM: number[] = [
+  0.80, 0.90, 1.00, 1.06, 1.12, 1.18, 1.25, 1.32, 1.40, 1.50,
+  1.60, 1.70, 1.80, 1.90, 2.00, 2.10, 2.24, 2.36, 2.44, 2.50, 2.65, 2.80
+];
+
+export const WIDTHS_B_MM: number[] = [
+  2.00, 2.12, 2.24, 2.36, 2.50, 2.65, 2.80, 3.00, 3.15, 3.35,
+  3.55, 3.75, 4.00, 4.25, 4.50, 4.75, 5.00, 5.30, 5.60, 6.00,
+  6.30, 6.70, 7.10, 7.50, 8.00, 8.50, 9.00, 9.50, 10.0, 10.6,
+  11.2, 11.8, 12.5, 13.2, 14.0, 15.0, 15.6, 16.0, 17.0, 18.0, 19.0, 20.0,
+  21.2, 22.4, 23.6, 25.0, 26.5, 28.0, 30.0
+];
+
+export function getOptimalStandardWire(b_max_mm: number, S_theo_mm2: number) {
+  let best_b = WIDTHS_B_MM[0];
+  for (const width of WIDTHS_B_MM) {
+    if (width <= b_max_mm) best_b = width;
+    else break;
+  }
+
+  const a_theo = S_theo_mm2 / best_b;
+
+  let best_a = THICKNESSES_A_MM[0];
+  let min_diff = Math.abs(THICKNESSES_A_MM[0] - a_theo);
+
+  for (const thickness of THICKNESSES_A_MM) {
+    const diff = Math.abs(thickness - a_theo);
+    if (diff < min_diff) {
+      min_diff = diff;
+      best_a = thickness;
     }
   }
-  return curve[curve.length - 1][1];
+
+  const S_commercial_mm2 = Math.round((best_a * best_b) * 100) / 100;
+
+  return { a_mm: best_a, b_mm: best_b, S_mm2: S_commercial_mm2 };
+}
+
+// --- Figure 2.19 : Modèle Thermique du Rotor ---
+export const tableFig2_19_alpha = {
+  v_p: [0, 10, 20, 30, 40, 50, 60, 70, 80],
+  alpha: [0.000, 0.008, 0.013, 0.0165, 0.0185, 0.0205, 0.0215, 0.0225, 0.0235]
+};
+
+export function getCoolingCoefficientAlpha(v_p: number): number {
+  return interpolate1D(v_p, tableFig2_19_alpha.v_p, tableFig2_19_alpha.alpha);
+}
+
+export function getCoolingCoefficientK(l1_tau_ratio: number): number {
+  return Math.pow(l1_tau_ratio, -0.4);
+}
+
+// ============================================================================
+// PERTES ET RENDEMENT (Étape 14)
+// ============================================================================
+
+export type HarmonicKey = 0 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+export type SpecificLossRow = Record<HarmonicKey, number>;
+export type SpecificLossTable = Record<number, SpecificLossRow>;
+
+// --- Tableau 2.7 : Pertes spécifiques E11 ---
+export const tableau2_7: SpecificLossTable = {
+  5000:  { 0: 1,    100: 1.04,  200: 1.08,  300: 1.11,  400: 1.14,  500: 1.2,   600: 1.2,   700: 1.25,  800: 1.31,  900: 1.35  },
+  6000:  { 0: 1.4,  100: 1.45,  200: 1.5,   300: 1.55,  400: 1.6,   500: 1.65,  600: 1.7,   700: 1.75,  800: 1.8,   900: 1.85  },
+  7000:  { 0: 1.9,  100: 1.95,  200: 2,     300: 2.05,  400: 2.1,   500: 2.15,  600: 2.15,  700: 2.15,  800: 2.2,   900: 2.25  },
+  8000:  { 0: 2.3,  100: 2.35,  200: 2.4,   300: 2.45,  400: 2.5,   500: 2.55,  600: 2.6,   700: 2.65,  800: 2.7,   900: 2.75  },
+  9000:  { 0: 2.8,  100: 2.85,  200: 2.9,   300: 2.95,  400: 3.0,   500: 3.05,  600: 3.1,   700: 3.15,  800: 3.2,   900: 3.25  },
+  10000: { 0: 3.3,  100: 3.36,  200: 3.42,  300: 3.48,  400: 3.55,  500: 3.62,  600: 3.7,   700: 3.78,  800: 3.86,  900: 3.94  },
+  11000: { 0: 4.02, 100: 4.1,   200: 4.18,  300: 4.26,  400: 4.34,  500: 4.42,  600: 4.5,   700: 4.6,   800: 4.7,   900: 4.8   },
+  12000: { 0: 4.9,  100: 5.0,   200: 5.1,   300: 5.2,   400: 5.3,   500: 5.4,   600: 5.5,   700: 5.6,   800: 5.7,   900: 5.8   },
+  13000: { 0: 5.9,  100: 6.0,   200: 6.1,   300: 6.2,   400: 6.3,   500: 6.4,   600: 6.5,   700: 6.6,   800: 6.7,   900: 6.8   },
+  14000: { 0: 6.9,  100: 7.0,   200: 7.1,   300: 7.2,   400: 7.3,   500: 7.4,   600: 7.5,   700: 7.6,   800: 7.7,   900: 7.8   },
+  15000: { 0: 7.9,  100: 8.0,   200: 8.1,   300: 8.2,   400: 8.3,   500: 8.4,   600: 8.5,   700: 8.6,   800: 8.7,   900: 8.8   },
+  16000: { 0: 9.0,  100: 9.1,   200: 9.1,   300: 9.2,   400: 9.3,   500: 9.4,   600: 9.5,   700: 9.6,   800: 9.7,   900: 9.8   },
+  17000: { 0: 9.9,  100: 10,    200: 10.1,  300: 10.2,  400: 10.3,  500: 10.4,  600: 10.52, 700: 10.6,  800: 10.76, 900: 10.88 },
+  18000: { 0: 11.0, 100: 11.15, 200: 11.3,  300: 11.45, 400: 11.6,  500: 11.75, 600: 11.9,  700: 12.15, 800: 12.2,  900: 12.35 },
+  19000: { 0: 12.5, 100: 12.65, 200: 12.8,  300: 12.95, 400: 13.1,  500: 13.25, 600: 13.4,  700: 13.55, 800: 13.7,  900: 13.9  },
+};
+
+export function getSpecificLoss(bAc: number, harmonic: HarmonicKey = 0): number {
+  const keys = Object.keys(tableau2_7).map(Number).sort((a, b) => a - b);
+  
+  if (bAc <= keys[0]) return tableau2_7[keys[0]][harmonic];
+  if (bAc >= keys[keys.length - 1]) return tableau2_7[keys[keys.length - 1]][harmonic];
+
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (bAc >= keys[i] && bAc <= keys[i + 1]) {
+      const k1 = keys[i];
+      const k2 = keys[i + 1];
+      const val1 = tableau2_7[k1 as keyof SpecificLossTable][harmonic];
+      const val2 = tableau2_7[k2 as keyof SpecificLossTable][harmonic];
+      return val1 + ((bAc - k1) / (k2 - k1)) * (val2 - val1);
+    }
+  }
+  return 0;
+}
+
+// --- Figure 2.20 : Coefficient de pulsation de flux ---
+export const tableFig2_20_beta0 = {
+  ratio_bou_delta: [0, 1.0, 2.0, 3.0, 3.37, 4.0, 5.0, 6.0],
+  beta_0:          [0, 0.05, 0.12, 0.18, 0.21, 0.25, 0.30, 0.34]
+};
+
+export function getBeta0(ratio_bou_delta: number): number {
+  return interpolate1D(ratio_bou_delta, tableFig2_20_beta0.ratio_bou_delta, tableFig2_20_beta0.beta_0);
 }

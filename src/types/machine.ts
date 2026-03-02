@@ -36,6 +36,9 @@ export interface MainDimensions {
   l1: number;       // l + nv*bv
   lDeltaFinal: number;
   lambda: number;   // Ratio vérification
+  isLambdaValid: boolean;
+  lambdaMessage: string;
+  l_M: number; // Longueur du noyau polaire en cm (ex: 48.5)
 }
 
 export interface StatorDesign {
@@ -52,6 +55,9 @@ export interface StatorDesign {
   Bd0: number;      // Induction entrefer vide (Gauss)
   BdN: number;      // Induction entrefer charge (Gauss)
   be: number;       // Largeur encoche (mm)
+  le: number;       // Largeur encoche finale (mm)
+  a_cond: number;   // Hauteur fil cuivre (mm)
+  b_cond: number;   // Largeur fil cuivre (mm)
   he: number;       // Hauteur encoche (mm)
   bd1: number;      // Largeur dent (cm)
   Bd1: number;      // Induction dent (Gauss)
@@ -63,6 +69,12 @@ export interface StatorDesign {
   Ra75pu: number;   // Résistance p.u.
   Lc: number;       // Longueur enroulement (m)
   Gm: number;       // Poids cuivre (kg)
+  Z: number;          // Nombre total d'encoches du stator (ex: 72)
+  b_ou: number;       // Ouverture de l'encoche en cm (ex: 1.52)
+  h_c: number;        // Hauteur de la culasse en cm (ex: 6.2)
+  k_c: number;        // Coefficient de remplissage du fer (ex: 0.93)
+  h_a1: number;       // Hauteur de la dent/encoche en cm (ex: 6.8)
+  b_d_milieu: number; // Largeur de la dent au milieu en cm (ex: 1.955)
 }
 
 export interface AirGapDesign {
