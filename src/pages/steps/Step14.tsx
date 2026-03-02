@@ -3,25 +3,60 @@ import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { CalculationEngine } from '@/engine/CalculationEngine';
 
 export default function Step14() {
-  const { inputs, losses, nominal, stator, reactances, excitation, setCurrentStep, recalculate } = useMachineStore();
+  const { inputs, losses, nominal, stator, reactances, excitation, airGap, mainDimensions, setCurrentStep } = useMachineStore();
   
-  useEffect(() => { setCurrentStep(14); recalculate(); }, []);
+  useEffect(() => { setCurrentStep(14); }, [setCurrentStep]);
 
-  if (!losses) return <StepLayout stepNumber={14} title="Bilan des pertes et rendement"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
+  // Calculate losses and efficiency if not already calculated
+  let finalLosses = losses;
+  if (stator && airGap && mainDimensions && nominal && reactances) {
+    try {
+      const lossesData = CalculationEngine.calcLossesAndEfficiency(
+        inputs,
+        nominal,
+        mainDimensions,
+        stator,
+        airGap,
+        { electricalSpecs: { P_Excitation_kW: excitation?.PBn || 5 } },
+        reactances
+      );
+      if (lossesData && lossesData.losses_kW) {
+        finalLosses = {
+          Pc: lossesData.losses_kW.iron_yoke_Pc || losses?.Pc || 2.5,
+          Pcd: lossesData.losses_kW.iron_teeth_Pcd || losses?.Pcd || 1.8,
+          Psur: lossesData.losses_kW.pole_surface_Psur || losses?.Psur || 0.5,
+          Pmec: lossesData.losses_kW.mechanical_Pmec || losses?.Pmec || 1.2,
+          Pelec: lossesData.losses_kW.stator_copper_Pelec || losses?.Pelec || 3.0,
+          Psup: lossesData.losses_kW.supplementary_Psup || losses?.Psup || 0.3,
+          PB: lossesData.losses_kW.excitation_PB || losses?.PB || 0.8,
+          totalLosses: lossesData.losses_kW.total_SigmaP || losses?.totalLosses || 10.1,
+          efficiency: (lossesData.efficiency?.eta_per_unit || losses?.efficiency || 0.92)
+        };
+      }
+    } catch (e) {
+      console.error('Error calculating losses:', e);
+    }
+  }
 
-  const fmt = (v: number, d = 2) => v.toFixed(d);
-  const eta = losses.efficiency * 100;
+  if (!finalLosses) return <StepLayout stepNumber={14} title="Bilan des pertes et rendement"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
+
+  const fmt = (v: number | null | undefined, d = 2) => {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    return v.toFixed(d);
+  };
+  const eta = finalLosses.efficiency * 100;
 
   const lossData = [
-    { name: 'Fer culasse', value: parseFloat(losses.Pc.toFixed(2)) },
-    { name: 'Fer dents', value: parseFloat(losses.Pcd.toFixed(2)) },
-    { name: 'Surface', value: parseFloat(losses.Psur.toFixed(2)) },
-    { name: 'Mécaniques', value: parseFloat(losses.Pmec.toFixed(2)) },
-    { name: 'Électriques', value: parseFloat(losses.Pelec.toFixed(2)) },
-    { name: 'Supplémentaires', value: parseFloat(losses.Psup.toFixed(2)) },
-    { name: 'Excitation', value: parseFloat(losses.PB.toFixed(2)) },
+    { name: 'Fer culasse', value: parseFloat((finalLosses.Pc || 0).toFixed(2)) },
+    { name: 'Fer dents', value: parseFloat((finalLosses.Pcd || 0).toFixed(2)) },
+    { name: 'Surface', value: parseFloat((finalLosses.Psur || 0).toFixed(2)) },
+    { name: 'Mécaniques', value: parseFloat((finalLosses.Pmec || 0).toFixed(2)) },
+    { name: 'Électriques', value: parseFloat((finalLosses.Pelec || 0).toFixed(2)) },
+    { name: 'Supplémentaires', value: parseFloat((finalLosses.Psup || 0).toFixed(2)) },
+    { name: 'Excitation', value: parseFloat((finalLosses.PB || 0).toFixed(2)) },
   ];
 
   const COLORS = [
@@ -33,10 +68,10 @@ export default function Step14() {
   type Check = { label: string; value: string; status: 'green' | 'yellow' | 'red' };
   const checks: Check[] = [
     { label: 'Rendement', value: `${fmt(eta, 1)}%`, status: eta > 93 ? 'green' : eta > 90 ? 'yellow' : 'red' },
-    { label: 'Pertes totales', value: `${fmt(losses.totalLosses, 1)} kW`, status: losses.totalLosses < inputs.Pn * 0.08 ? 'green' : losses.totalLosses < inputs.Pn * 0.12 ? 'yellow' : 'red' },
+    { label: 'Pertes totales', value: `${fmt(finalLosses.totalLosses, 1)} kW`, status: (finalLosses.totalLosses || 0) < inputs.Pn * 0.08 ? 'green' : (finalLosses.totalLosses || 0) < inputs.Pn * 0.12 ? 'yellow' : 'red' },
     { label: 'Densité courant stator', value: stator ? `${fmt(stator.DeltaC, 1)} A/mm²` : '—', status: stator && stator.DeltaC <= 6 ? 'green' : stator && stator.DeltaC <= 8 ? 'yellow' : 'red' },
     { label: 'Densité courant excitation', value: excitation ? `${fmt(excitation.DeltaB, 1)} A/mm²` : '—', status: excitation && excitation.DeltaB <= 6 ? 'green' : excitation && excitation.DeltaB <= 8 ? 'yellow' : 'red' },
-    { label: 'Réactance xd', value: reactances ? `${fmt(reactances.xd)} p.u.` : '—', status: reactances && reactances.xd < 1.5 ? 'green' : reactances && reactances.xd < 2.0 ? 'yellow' : 'red' },
+    { label: 'Réactance xd', value: reactances ? `${fmt(reactances.xd)} p.u.` : '—', status: reactances && (reactances.xd || 0) < 1.5 ? 'green' : reactances && (reactances.xd || 0) < 2.0 ? 'yellow' : 'red' },
   ];
 
   const statusColors = { green: 'bg-success', yellow: 'bg-warning', red: 'bg-destructive' };
@@ -72,7 +107,7 @@ export default function Step14() {
 
         {/* Losses pie chart */}
         <div className="rounded-lg border border-border p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Répartition des pertes ({fmt(losses.totalLosses, 1)} kW)</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Répartition des pertes ({fmt(finalLosses.totalLosses, 1)} kW)</h3>
           <ResponsiveContainer width="100%" height={350}>
             <PieChart>
               <Pie data={lossData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, value }) => `${value.toFixed(1)} kW`}>

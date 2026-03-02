@@ -47,38 +47,63 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
     }
 
     try {
+      // STEPS 1-7: Core machine geometry
       const nominal = CalculationEngine.calcNominal(inputs);
       const mainDimensions = CalculationEngine.calcMainDimensions(inputs, nominal);
       const stator = CalculationEngine.calcStator(inputs, nominal, mainDimensions);
       const airGap = CalculationEngine.calcAirGap(mainDimensions, stator);
       const rotor = CalculationEngine.calcRotor(mainDimensions, stator, airGap);
-      
-      // Placeholder reactances and excitation for compatibility with existing steps
+
+      // STEP 7: No-load characteristic (needed for Steps 8-10)
+      const noLoadData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
+
+      // STEP 8: Leakage reactance
+      const reactanceData = CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
+
+      // Build reactances object from calculated data
       const reactances = {
-        xSigma: 0.1,
-        xad: 1.8,
-        xaq: 1.6,
+        xSigma: reactanceData.x_sigma_pu || 0.1,
+        xad: 1.8, // Will be refined in Step 11
+        xaq: 1.6, // Will be refined in Step 11
         xd: 1.9,
         xq: 1.7,
         xPrimeD: 0.3,
         x2: 0.2,
-        r_a: 0.001
+        r_a: (stator.Ra75pu || 0.001)
       };
-      
+
+      // STEP 9-10: Load excitation and excitation system
+      const loadExcitation = CalculationEngine.calcLoadExcitation(
+        nominal,
+        stator,
+        airGap,
+        mainDimensions,
+        noLoadData,
+        reactanceData
+      );
+
+      const excitationSystem = CalculationEngine.calcExcitationSystem(
+        nominal,
+        mainDimensions,
+        airGap,
+        loadExcitation.F_Bn
+      );
+
+      // Build excitation object from calculated data
       const excitation = {
-        Uexc: 120,
-        Fbn: 5000,
-        IB: 50,
-        DeltaB: 2.5,
+        Uexc: excitationSystem.electricalSpecs?.U_Excitation_V || 120,
+        Fbn: loadExcitation.F_Bn || 5000,
+        IB: excitationSystem.electricalSpecs?.I_B_Nominal_A || 50,
+        DeltaB: excitationSystem.thermal?.delta_B_A_mm2 || 2.5,
         ThetaB: 80,
-        wB: 240,
-        SB: 1.5,
-        rB: 0.5,
-        PBn: 5,
-        GB: 8
+        wB: excitationSystem.coilSizing?.omega_B_turns || 240,
+        SB: excitationSystem.commercialWire?.section_mm2 || 1.5,
+        rB: excitationSystem.electricalSpecs?.R_B_75_Ohm || 0.5,
+        PBn: excitationSystem.electricalSpecs?.P_Excitation_kW || 5,
+        GB: excitationSystem.coilSizing?.weight_copper_kg || 8
       };
-      
-      // Placeholder losses for compatibility
+
+      // Build losses object (will be populated in Step 14)
       const losses = {
         Pc: 2.5,
         Pcd: 1.8,

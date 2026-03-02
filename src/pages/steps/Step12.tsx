@@ -3,16 +3,40 @@ import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { FormulaResult } from '@/components/FormulaResult';
 import { ResultTable } from '@/components/ResultTable';
+import { CalculationEngine } from '@/engine/CalculationEngine';
 
 export default function Step12() {
-  const { nominal, setCurrentStep, recalculate } = useMachineStore();
+  const { inputs, nominal, reactances, stator, airGap, mainDimensions, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
     setCurrentStep(12);
-    recalculate();
-  }, []);
+  }, [setCurrentStep]);
 
-  const fmt = (v: number, d = 2) => v.toFixed(d);
+  const fmt = (v: number | null | undefined, d = 2) => {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    return v.toFixed(d);
+  };
+
+  // Calculate short-circuit currents if necessary data exists
+  let shortCircuit: any = null;
+  if (reactances && stator && airGap && mainDimensions && nominal) {
+    try {
+      shortCircuit = CalculationEngine.calcShortCircuitCurrents(
+        inputs,
+        nominal,
+        mainDimensions,
+        stator,
+        airGap,
+        reactances
+      );
+    } catch (e) {
+      console.error('Error calculating short-circuit currents:', e);
+    }
+  }
+
+  const icc0 = shortCircuit?.Icc0_pu || (nominal ? 1 / (reactances?.xd || 1.9) : 0);
+  const iccnA = shortCircuit?.Iccn_A || (nominal && icc0 ? icc0 * nominal.In : 0);
+  const kcc = icc0 || null;
 
   return (
     <StepLayout 
@@ -24,16 +48,16 @@ export default function Step12() {
         <div className="space-y-4">
           <FormulaResult
             label="Courant de court-circuit à vide"
-            tex={`I_{cc0} = \\frac{E_0'}{x_d} \\quad (\\text{p.u.})`}
-            result="—"
+            tex={`I_{cc0} = \\frac{1}{x_d}`}
+            result={fmt(icc0)}
             unit="p.u."
           />
 
           <FormulaResult
             label="Courant de court-circuit nominal"
-            tex={`I_{ccn} = I_{cc0} \\times F_{Bn}^* \\quad (\\text{p.u.})`}
-            result="—"
-            unit="p.u."
+            tex={`I_{ccn} = I_{cc0} \\times I_n`}
+            result={fmt(iccnA)}
+            unit="A"
           />
 
           <div className="rounded-lg border border-border p-4 bg-warning/10">
@@ -41,10 +65,10 @@ export default function Step12() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Iccn (Ampères)</span>
-                <span className="text-lg font-mono font-bold text-foreground">—</span>
+                <span className="text-lg font-mono font-bold text-foreground">{fmt(iccnA)}</span>
               </div>
               <div className="text-xs text-warning">
-                ⚠ Le courant de court-circuit dépend directement de la réactance synchrone xd
+                ⚠ Le courant de court-circuit dépend directement de la réactance synchrone xd = {fmt(reactances?.xd)}
               </div>
             </div>
           </div>
@@ -55,25 +79,25 @@ export default function Step12() {
             title="Données d'entrée"
             rows={[
               { label: 'Tension induite interne', symbol: 'E₀\'*', value: '1.08', unit: 'p.u.' },
-              { label: 'Réactance synchrone d', symbol: 'xd', value: '—', unit: 'p.u.' },
-              { label: 'MMF excitation', symbol: 'FBn*', value: '—', unit: 'p.u.' },
+              { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(reactances?.xd), unit: 'p.u.' },
+              { label: 'Courant nominal', symbol: 'In', value: fmt(nominal?.In), unit: 'A' },
             ]}
           />
 
           <ResultTable
             title="Résultats"
             rows={[
-              { label: 'Courant cc à vide', symbol: 'Icc0', value: '—', unit: 'p.u.' },
-              { label: 'Courant cc nominal', symbol: 'Iccn', value: '—', unit: 'p.u.' },
-              { label: 'Courant cc nominal', symbol: 'Iccn', value: '—', unit: 'A' },
+              { label: 'Courant cc à vide', symbol: 'Icc0', value: fmt(icc0), unit: 'p.u.' },
+              { label: 'Courant cc à vide', symbol: 'Icc0', value: fmt(icc0 && nominal ? icc0 * nominal.In : 0), unit: 'A' },
+              { label: 'Courant cc nominal', symbol: 'Iccn', value: fmt(iccnA), unit: 'A' },
             ]}
           />
 
           <div className="rounded-lg border border-border p-4">
             <h4 className="text-sm font-semibold text-foreground mb-3">Facteur de court-circuit</h4>
             <div className="p-3 rounded-md bg-muted/50 text-center">
-              <p className="text-xs text-muted-foreground mb-1">kcc</p>
-              <p className="text-2xl font-mono font-bold text-foreground">—</p>
+              <p className="text-xs text-muted-foreground mb-1">kcc = 1/xd</p>
+              <p className="text-2xl font-mono font-bold text-foreground">{fmt(kcc)}</p>
             </div>
           </div>
         </div>

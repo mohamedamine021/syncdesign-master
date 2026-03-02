@@ -6,15 +6,33 @@ import { ResultTable } from '@/components/ResultTable';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
 export default function Step11() {
-  const { inputs, nominal, setCurrentStep, recalculate } = useMachineStore();
+  const { inputs, nominal, reactances, stator, airGap, mainDimensions, setCurrentStep, recalculate } = useMachineStore();
 
   useEffect(() => {
     setCurrentStep(11);
-    recalculate();
-  }, []);
+  }, [setCurrentStep]);
 
-  // For now, show placeholder until reactances and other dependencies are calculated
-  const fmt = (v: number, d = 2) => v.toFixed(d);
+  const fmt = (v: number | null | undefined, d = 3) => {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    return v.toFixed(d);
+  };
+
+  // Calculate machine parameters if reactances exist
+  let machineParams: any = null;
+  if (reactances && stator && airGap && mainDimensions && nominal) {
+    try {
+      machineParams = CalculationEngine.calcMachineParameters(
+        inputs,
+        nominal,
+        mainDimensions,
+        stator,
+        airGap,
+        reactances
+      );
+    } catch (e) {
+      console.error('Error calculating machine parameters:', e);
+    }
+  }
 
   return (
     <StepLayout 
@@ -29,12 +47,12 @@ export default function Step11() {
             <div className="space-y-3">
               <div className="p-3 rounded-md bg-card border border-border">
                 <p className="text-xs text-muted-foreground">Réactance longitudinale</p>
-                <p className="text-lg font-mono text-foreground font-bold">xad</p>
+                <p className="text-lg font-mono text-foreground font-bold">{fmt(machineParams?.xad || reactances?.xad)}</p>
                 <p className="text-xs text-muted-foreground">p.u.</p>
               </div>
               <div className="p-3 rounded-md bg-card border border-border">
                 <p className="text-xs text-muted-foreground">Réactance transversale</p>
-                <p className="text-lg font-mono text-foreground font-bold">xaq</p>
+                <p className="text-lg font-mono text-foreground font-bold">{fmt(machineParams?.xaq || reactances?.xaq)}</p>
                 <p className="text-xs text-muted-foreground">p.u.</p>
               </div>
             </div>
@@ -42,8 +60,8 @@ export default function Step11() {
 
           <FormulaResult
             label="Réactance synchrone longitudinale"
-            tex={`x_d = x_\\sigma + x_{ad} \\; (\\text{p.u.})`}
-            result="—"
+            tex={`x_d = x_\\sigma + x_{ad}`}
+            result={fmt(machineParams?.xd || (reactances?.xSigma || 0) + (reactances?.xad || 0))}
             unit="p.u."
           />
         </div>
@@ -52,24 +70,24 @@ export default function Step11() {
           <ResultTable
             title="Réactances & Résistances"
             rows={[
-              { label: 'Réactance dispersion', symbol: 'xσ', value: '—', unit: 'p.u.' },
-              { label: 'Réactance ad', symbol: 'xad', value: '—', unit: 'p.u.' },
-              { label: 'Réactance aq', symbol: 'xaq', value: '—', unit: 'p.u.' },
-              { label: 'Réactance synchrone d', symbol: 'xd', value: '—', unit: 'p.u.' },
-              { label: 'Réactance synchrone q', symbol: 'xq', value: '—', unit: 'p.u.' },
-              { label: 'Réactance excitation', symbol: 'xB', value: '—', unit: 'p.u.' },
-              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: '—', unit: 'p.u.' },
-              { label: 'Réactance transitoire d', symbol: "xd'", value: '—', unit: 'p.u.' },
-              { label: 'Réactance inverse', symbol: 'x2', value: '—', unit: 'p.u.' },
+              { label: 'Réactance dispersion', symbol: 'xσ', value: fmt(reactances?.xSigma), unit: 'p.u.' },
+              { label: 'Réactance ad', symbol: 'xad', value: fmt(machineParams?.xad || reactances?.xad), unit: 'p.u.' },
+              { label: 'Réactance aq', symbol: 'xaq', value: fmt(machineParams?.xaq || reactances?.xaq), unit: 'p.u.' },
+              { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(machineParams?.xd), unit: 'p.u.' },
+              { label: 'Réactance synchrone q', symbol: 'xq', value: fmt(machineParams?.xq), unit: 'p.u.' },
+              { label: 'Réactance excitation', symbol: 'xB', value: fmt(machineParams?.xB), unit: 'p.u.' },
+              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: fmt(machineParams?.xBsigma), unit: 'p.u.' },
+              { label: 'Réactance transitoire d', symbol: "xd'", value: fmt(machineParams?.xdPrime), unit: 'p.u.' },
+              { label: 'Réactance inverse', symbol: 'x2', value: fmt(machineParams?.x2), unit: 'p.u.' },
             ]}
           />
 
           <ResultTable
             title="Constantes de temps"
             rows={[
-              { label: 'Temps à vide', symbol: 'Td0', value: '—', unit: 's' },
-              { label: 'Temps transitoire', symbol: "Td'", value: '—', unit: 's' },
-              { label: 'Temps induit', symbol: 'Ta', value: '—', unit: 's' },
+              { label: 'Temps à vide', symbol: 'Td0', value: fmt(machineParams?.Td0), unit: 's' },
+              { label: 'Temps transitoire', symbol: "Td'", value: fmt(machineParams?.TdPrime), unit: 's' },
+              { label: 'Temps induit', symbol: 'Ta', value: fmt(machineParams?.Ta), unit: 's' },
             ]}
           />
         </div>
@@ -77,7 +95,7 @@ export default function Step11() {
 
       <div className="mt-6 rounded-lg border border-border p-5 bg-info/10">
         <p className="text-xs text-info font-medium">
-          ℹ Cette étape calcule les paramètres de fonctionnement dynamique à partir des données des étapes précédentes.
+          ℹ Paramètres calculés à partir des réactances de l'étape 8 et des dimensions de la machine.
         </p>
       </div>
     </StepLayout>

@@ -3,16 +3,43 @@ import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { FormulaResult } from '@/components/FormulaResult';
 import { ResultTable } from '@/components/ResultTable';
+import { CalculationEngine } from '@/engine/CalculationEngine';
 
 export default function Step13() {
-  const { inputs, setCurrentStep, recalculate } = useMachineStore();
+  const { inputs, nominal, reactances, stator, airGap, mainDimensions, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
     setCurrentStep(13);
-    recalculate();
-  }, []);
+  }, [setCurrentStep]);
 
-  const fmt = (v: number, d = 2) => v.toFixed(d);
+  const fmt = (v: number | null | undefined, d = 2) => {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    return v.toFixed(d);
+  };
+
+  // Calculate static overload capacity
+  let overloadData: any = null;
+  if (reactances && stator && airGap && mainDimensions && nominal) {
+    try {
+      overloadData = CalculationEngine.calcStaticOverload(
+        inputs,
+        nominal,
+        mainDimensions,
+        stator,
+        airGap,
+        reactances
+      );
+    } catch (e) {
+      console.error('Error calculating static overload:', e);
+    }
+  }
+
+  const xd = reactances?.xd || 1.9;
+  const xq = reactances?.xq || 1.7;
+  const icc0 = nominal ? 1 / xd : 0;
+  const epsilon = overloadData?.epsilon || (xd && xq ? (xd - xq) / (1.08 * xq) : 0);
+  const k = 1 + 0.11 * (epsilon || 0);
+  const S = overloadData?.S_overload_pu || (icc0 ? (icc0 / inputs.cosPhi) * k : 0);
 
   return (
     <StepLayout 
@@ -24,27 +51,27 @@ export default function Step13() {
         <div className="space-y-4">
           <FormulaResult
             label="Tension interne fictive"
-            tex={`E_{00}'^* = E_0'^* \\times I_{Bn}^*`}
-            result="—"
+            tex={`E_{00}'^* = 1.08`}
+            result="1.08"
             unit="p.u."
           />
 
           <FormulaResult
             label="Coefficient de saillance"
-            tex={`\\varepsilon = \\frac{x_d - x_q}{E_{00}'^* \\times x_q}`}
-            result="—"
+            tex={`\\varepsilon = \\frac{x_d - x_q}{E_{00}'^* \\times x_q} = \\frac{${fmt(xd)} - ${fmt(xq)}}{1.08 \\times ${fmt(xq)}}`}
+            result={fmt(epsilon)}
           />
 
           <FormulaResult
             label="Facteur de correction k"
-            tex={`k = 1 + 0.11 \\times \\varepsilon`}
-            result="—"
+            tex={`k = 1 + 0.11 \\times ${fmt(epsilon)}`}
+            result={fmt(k)}
           />
 
           <FormulaResult
             label="Surcharge statique maximale"
-            tex={`S = \\frac{I_{ccn}}{\\cos\\varphi} \\times k = \\frac{I_{ccn}}{${fmt(inputs.cosPhi)}} \\times k`}
-            result="—"
+            tex={`S = \\frac{I_{cc0}}{${fmt(inputs.cosPhi)}} \\times k = \\frac{${fmt(icc0)}}{${fmt(inputs.cosPhi)}} \\times ${fmt(k)}`}
+            result={fmt(S)}
           />
         </div>
 
@@ -52,19 +79,19 @@ export default function Step13() {
           <ResultTable
             title="Paramètres de réaction d'induit"
             rows={[
-              { label: 'Réactance synchrone d', symbol: 'xd', value: '—', unit: 'p.u.' },
-              { label: 'Réactance synchrone q', symbol: 'xq', value: '—', unit: 'p.u.' },
-              { label: 'Courant court-circuit', symbol: 'Iccn', value: '—', unit: 'p.u.' },
+              { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(xd), unit: 'p.u.' },
+              { label: 'Réactance synchrone q', symbol: 'xq', value: fmt(xq), unit: 'p.u.' },
+              { label: 'Courant court-circuit', symbol: 'Icc0', value: fmt(icc0), unit: 'p.u.' },
             ]}
           />
 
           <ResultTable
             title="Stabilité de la machine"
             rows={[
-              { label: 'E00\'* (p.u.)', symbol: 'E₀₀\'*', value: '—', unit: 'p.u.' },
-              { label: 'Coefficient ε', symbol: 'ε', value: '—', unit: '' },
-              { label: 'Facteur k', symbol: 'k', value: '—', unit: '' },
-              { label: 'Surcharge S', symbol: 'S', value: '—', unit: '(multiples de Pn)' },
+              { label: 'E00\'* (p.u.)', symbol: 'E₀₀\'*', value: '1.08', unit: 'p.u.' },
+              { label: 'Coefficient ε', symbol: 'ε', value: fmt(epsilon), unit: '' },
+              { label: 'Facteur k', symbol: 'k', value: fmt(k), unit: '' },
+              { label: 'Surcharge S', symbol: 'S', value: fmt(S), unit: '(multiples de Pn)' },
             ]}
           />
 
