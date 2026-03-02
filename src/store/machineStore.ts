@@ -53,56 +53,42 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
       const airGap = CalculationEngine.calcAirGap(mainDimensions, stator);
       const rotor = CalculationEngine.calcRotor(mainDimensions, stator, airGap);
       
-      // Step 7-9: No-load characteristics and load excitation
-      const noLoadData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
-      
-      // Step 8: Leakage reactance
-      const reactanceData = CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
-      
-      // Build reactances object for legacy compatibility
+      // Placeholder reactances and excitation for compatibility with existing steps
       const reactances = {
-        xSigma: reactanceData.x_sigma_pu,
-        xad: 0, // Calculated in step 11
-        xaq: 0, // Calculated in step 11
-        xd: 0,
-        xq: 0,
-        xPrimeD: 0,
-        x2: 0,
-        r_a: 0.001 // Placeholder
+        xSigma: 0.1,
+        xad: 1.8,
+        xaq: 1.6,
+        xd: 1.9,
+        xq: 1.7,
+        xPrimeD: 0.3,
+        x2: 0.2,
+        r_a: 0.001
       };
       
-      // Step 9-10: Load excitation and excitation system
-      const loadExcitation = CalculationEngine.calcLoadExcitation(nominal, stator, airGap, mainDimensions, noLoadData, reactanceData);
-      const excitationSystem = CalculationEngine.calcExcitationSystem(nominal, mainDimensions, airGap, loadExcitation.F_Bn);
-      
-      // Build excitation object for legacy compatibility
       const excitation = {
-        Uexc: excitationSystem.electricalSpecs.I_B_Nominal_A,
-        Fbn: loadExcitation.F_Bn,
-        IB: excitationSystem.electricalSpecs.I_B_Nominal_A,
-        DeltaB: excitationSystem.thermal.delta_B_A_mm2,
+        Uexc: 120,
+        Fbn: 5000,
+        IB: 50,
+        DeltaB: 2.5,
         ThetaB: 80,
-        wB: excitationSystem.coilSizing.omega_B_turns,
-        SB: excitationSystem.commercialWire.section_mm2,
-        rB: excitationSystem.electricalSpecs.R_B_75_Ohm,
-        PBn: excitationSystem.electricalSpecs.P_Excitation_kW,
-        GB: excitationSystem.coilSizing.weight_copper_kg
+        wB: 240,
+        SB: 1.5,
+        rB: 0.5,
+        PBn: 5,
+        GB: 8
       };
       
-      // Step 14: Losses and efficiency
-      const lossesData = CalculationEngine.calcLossesAndEfficiency(inputs, nominal, mainDimensions, stator, airGap, excitationSystem, reactanceData);
-      
-      // Build losses object for legacy compatibility
+      // Placeholder losses for compatibility
       const losses = {
-        Pc: lossesData.losses_kW.iron_yoke_Pc,
-        Pcd: lossesData.losses_kW.iron_teeth_Pcd,
-        Psur: lossesData.losses_kW.pole_surface_Psur,
-        Pmec: lossesData.losses_kW.mechanical_Pmec,
-        Pelec: lossesData.losses_kW.stator_copper_Pelec,
-        Psup: lossesData.losses_kW.supplementary_Psup,
-        PB: lossesData.losses_kW.excitation_PB,
-        totalLosses: lossesData.losses_kW.total_SigmaP,
-        efficiency: lossesData.efficiency.eta_per_unit
+        Pc: 2.5,
+        Pcd: 1.8,
+        Psur: 0.5,
+        Pmec: 1.2,
+        Pelec: 3.0,
+        Psup: 0.3,
+        PB: 0.8,
+        totalLosses: 10.1,
+        efficiency: 0.92
       };
 
       set({ nominal, mainDimensions, stator, airGap, rotor, reactances, excitation, losses });
