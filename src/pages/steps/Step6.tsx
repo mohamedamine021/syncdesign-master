@@ -5,10 +5,16 @@ import { FormulaResult } from '@/components/FormulaResult';
 import { ResultTable } from '@/components/ResultTable';
 
 export default function Step6() {
-  const { airGap, mainDimensions: dim, setCurrentStep, recalculate } = useMachineStore();
-  useEffect(() => { setCurrentStep(6); recalculate(); }, []);
+  const { airGap, mainDimensions: dim, setCurrentStep } = useMachineStore();
+  useEffect(() => { setCurrentStep(6); }, [setCurrentStep]);
 
-  if (!airGap || !dim) return <StepLayout stepNumber={6} title="Entrefer & Carter"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
+  if (!airGap || !dim) {
+    return (
+      <StepLayout stepNumber={6} title="Entrefer & Carter" description="Calcul de l'entrefer et du coefficient de Carter">
+        <p className="text-destructive">Données manquantes. Veuillez compléter les étapes précédentes.</p>
+      </StepLayout>
+    );
+  }
 
   const fmt = (v: number, d = 2) => v.toFixed(d);
 

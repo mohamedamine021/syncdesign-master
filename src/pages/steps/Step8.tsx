@@ -6,10 +6,16 @@ import { ResultTable } from '@/components/ResultTable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Step8() {
-  const { reactances, nominal, setCurrentStep, recalculate } = useMachineStore();
-  useEffect(() => { setCurrentStep(8); recalculate(); }, []);
+  const { reactances, nominal, setCurrentStep } = useMachineStore();
+  useEffect(() => { setCurrentStep(8); }, [setCurrentStep]);
 
-  if (!reactances || !nominal) return <StepLayout stepNumber={8} title="Réactances"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
+  if (!reactances || !nominal) {
+    return (
+      <StepLayout stepNumber={8} title="Réactances" description="Réactances synchrones et diagramme vectoriel de Blondel">
+        <p className="text-destructive">Données manquantes. Veuillez compléter les étapes précédentes.</p>
+      </StepLayout>
+    );
+  }
 
   const fmt = (v: number, d = 3) => v.toFixed(d);
 

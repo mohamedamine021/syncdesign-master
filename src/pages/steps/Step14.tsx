@@ -130,14 +130,14 @@ export default function Step14() {
         <ResultTable 
           title="Détail des pertes en régime nominal" 
           rows={[
-            { label: 'Pertes fer culasse', symbol: 'Pc', value: fmt(losses.Pc, 2), unit: 'kW' },
-            { label: 'Pertes fer dents', symbol: 'Pcd', value: fmt(losses.Pcd, 2), unit: 'kW' },
-            { label: 'Pertes surface', symbol: 'Psur', value: fmt(losses.Psur, 2), unit: 'kW' },
-            { label: 'Pertes mécaniques', symbol: 'Pmec', value: fmt(losses.Pmec, 2), unit: 'kW' },
-            { label: 'Pertes électriques stator', symbol: 'Pelec', value: fmt(losses.Pelec, 2), unit: 'kW' },
-            { label: 'Pertes supplémentaires', symbol: 'Psup', value: fmt(losses.Psup, 2), unit: 'kW' },
-            { label: 'Pertes excitation', symbol: 'PB', value: fmt(losses.PB, 2), unit: 'kW' },
-            { label: 'PERTES TOTALES', symbol: 'ΣP', value: fmt(losses.totalLosses, 2), unit: 'kW' },
+            { label: 'Pertes fer culasse', symbol: 'Pc', value: fmt(finalLosses.Pc, 2), unit: 'kW' },
+            { label: 'Pertes fer dents', symbol: 'Pcd', value: fmt(finalLosses.Pcd, 2), unit: 'kW' },
+            { label: 'Pertes surface', symbol: 'Psur', value: fmt(finalLosses.Psur, 2), unit: 'kW' },
+            { label: 'Pertes mécaniques', symbol: 'Pmec', value: fmt(finalLosses.Pmec, 2), unit: 'kW' },
+            { label: 'Pertes électriques stator', symbol: 'Pelec', value: fmt(finalLosses.Pelec, 2), unit: 'kW' },
+            { label: 'Pertes supplémentaires', symbol: 'Psup', value: fmt(finalLosses.Psup, 2), unit: 'kW' },
+            { label: 'Pertes excitation', symbol: 'PB', value: fmt(finalLosses.PB, 2), unit: 'kW' },
+            { label: 'PERTES TOTALES', symbol: 'ΣP', value: fmt(finalLosses.totalLosses, 2), unit: 'kW' },
           ]} 
         />
       </div>
@@ -152,13 +152,13 @@ export default function Step14() {
         
         <div className="rounded-lg border border-border p-4 bg-muted/30 text-center">
           <p className="text-xs text-muted-foreground mb-2">PERTES TOTALES</p>
-          <p className="text-2xl font-bold font-mono text-destructive">{fmt(losses.totalLosses, 2)}</p>
+          <p className="text-2xl font-bold font-mono text-destructive">{fmt(finalLosses.totalLosses, 2)}</p>
           <p className="text-xs text-muted-foreground mt-1">kW</p>
         </div>
         
         <div className="rounded-lg border border-border p-4 bg-muted/30 text-center">
           <p className="text-xs text-muted-foreground mb-2">PUISSANCE ABSORBÉE</p>
-          <p className="text-2xl font-bold font-mono text-foreground">{fmt(inputs.Pn + losses.totalLosses, 2)}</p>
+          <p className="text-2xl font-bold font-mono text-foreground">{fmt(inputs.Pn + finalLosses.totalLosses, 2)}</p>
           <p className="text-xs text-muted-foreground mt-1">kW</p>
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function Step14() {
               • Rendement: <span className="font-bold">{fmt(eta, 1)}%</span>
             </p>
             <p className="font-mono text-foreground">
-              • Pertes totales: <span className="font-bold">{fmt(losses.totalLosses, 2)} kW</span>
+              • Pertes totales: <span className="font-bold">{fmt(finalLosses.totalLosses, 2)} kW</span>
             </p>
             <p className="font-mono text-foreground">
               • Catégorie: <span className="font-bold">IE3 Premium Efficiency</span> {eta >= 93 ? '✓' : '(à vérifier)'}

@@ -6,32 +6,43 @@ import { ResultTable } from '@/components/ResultTable';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
 export default function Step11() {
-  const { inputs, nominal, reactances, stator, airGap, mainDimensions, setCurrentStep, recalculate } = useMachineStore();
+  const { inputs, nominal, reactances, stator, airGap, mainDimensions, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
     setCurrentStep(11);
   }, [setCurrentStep]);
+
+  // Safety check: ensure all required data is available
+  if (!reactances || !stator || !airGap || !mainDimensions || !nominal || !inputs) {
+    return (
+      <StepLayout 
+        stepNumber={11} 
+        title="Paramètres dynamiques" 
+        description="Réactances synchrones, transitoires et constantes de temps"
+      >
+        <p className="text-destructive">Données manquantes. Veuillez compléter les étapes précédentes.</p>
+      </StepLayout>
+    );
+  }
 
   const fmt = (v: number | null | undefined, d = 3) => {
     if (v === null || v === undefined || isNaN(v)) return '—';
     return v.toFixed(d);
   };
 
-  // Calculate machine parameters if reactances exist
+  // Calculate machine parameters
   let machineParams: any = null;
-  if (reactances && stator && airGap && mainDimensions && nominal) {
-    try {
-      machineParams = CalculationEngine.calcMachineParameters(
-        inputs,
-        nominal,
-        mainDimensions,
-        stator,
-        airGap,
-        reactances
-      );
-    } catch (e) {
-      console.error('Error calculating machine parameters:', e);
-    }
+  try {
+    machineParams = CalculationEngine.calcMachineParameters(
+      inputs,
+      nominal,
+      mainDimensions,
+      stator,
+      airGap,
+      reactances
+    );
+  } catch (e) {
+    console.error('Error calculating machine parameters:', e);
   }
 
   return (

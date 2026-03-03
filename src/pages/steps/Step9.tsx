@@ -5,10 +5,16 @@ import { FormulaResult } from '@/components/FormulaResult';
 import { ResultTable } from '@/components/ResultTable';
 
 export default function Step9() {
-  const { excitation, setCurrentStep, recalculate } = useMachineStore();
-  useEffect(() => { setCurrentStep(9); recalculate(); }, []);
+  const { excitation, setCurrentStep } = useMachineStore();
+  useEffect(() => { setCurrentStep(9); }, [setCurrentStep]);
 
-  if (!excitation) return <StepLayout stepNumber={9} title="Excitation"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
+  if (!excitation) {
+    return (
+      <StepLayout stepNumber={9} title="Système d'excitation" description="Calcul du courant d'excitation et vérifications thermiques">
+        <p className="text-destructive">Données manquantes. Veuillez compléter les étapes précédentes.</p>
+      </StepLayout>
+    );
+  }
 
   const fmt = (v: number, d = 2) => v.toFixed(d);
 
