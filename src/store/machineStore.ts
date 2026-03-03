@@ -53,53 +53,15 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
       const stator = CalculationEngine.calcStator(inputs, nominal, mainDimensions);
       const airGap = CalculationEngine.calcAirGap(mainDimensions, stator);
       const rotor = CalculationEngine.calcRotor(mainDimensions, stator, airGap);
-
-      // Safety check: if airGap.delta is 0, set sensible defaults to avoid NaN
-      if (airGap.delta === 0 || airGap.delta === undefined) {
-        airGap.delta = 0.05;
-      }
-      if (!airGap.Kdelta || isNaN(airGap.Kdelta)) {
-        airGap.Kdelta = 1.15;
-      }
-
-      // STEP 7: No-load characteristic (needed for Steps 8-10)
+      
+      // STEP 7: No-load characteristic (needed for Steps 8-11)
       const noLoadData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
 
       // STEP 8: Leakage reactance
       const reactanceData = CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
 
-      // STEP 11: Calculate machine parameters to get real reactances and time constants
-      let machineParams: any = null;
-      try {
-        machineParams = CalculationEngine.calcMachineParameters(
-          inputs,
-          nominal,
-          mainDimensions,
-          stator,
-          airGap,
-          reactanceData
-        );
-      } catch (e) {
-        console.error('Error in calcMachineParameters:', e);
-      }
-
-      // Build reactances object from CALCULATED DATA (not hardcoded mock values)
-      const reactances = {
-        xSigma: reactanceData.x_sigma_pu || 0.1,
-        xad: machineParams?.reactances_pu?.x_ad || reactanceData.x_ad_pu || 1.8,
-        xaq: machineParams?.reactances_pu?.x_aq || reactanceData.x_aq_pu || 1.6,
-        xd: machineParams?.reactances_pu?.x_d || 1.9,
-        xq: machineParams?.reactances_pu?.x_q || 1.7,
-        xPrimeD: machineParams?.reactances_pu?.x_d_prime || 0.3,
-        x2: machineParams?.reactances_pu?.x_2 || 0.2,
-        r_a: (stator.Ra75pu || 0.001),
-        // Add nested objects for Step11 to access directly
-        reactances_pu: machineParams?.reactances_pu || {},
-        timeConstants_s: machineParams?.timeConstants_s || {}
-      };
-
-      // STEP 9-10: Load excitation and excitation system
-      const loadExcitation = CalculationEngine.calcLoadExcitation(
+      // STEP 9: Load excitation (reaction field)
+      const reaction = CalculationEngine.calcLoadExcitation(
         nominal,
         stator,
         airGap,
@@ -108,17 +70,44 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
         reactanceData
       );
 
+      // STEP 10: Excitation system
       const excitationSystem = CalculationEngine.calcExcitationSystem(
         nominal,
         mainDimensions,
         airGap,
-        loadExcitation.F_Bn
+        reaction.F_Bn
       );
+
+      // STEP 11: Machine parameters (Réactances synchrones, transitoires, constantes de temps)
+      // IMPORTANT: Respect the exact signature: (nom, airGap, noLoadData, reactances, reaction, rotor, ...)
+      const machineParams = CalculationEngine.calcMachineParameters(
+        nominal,
+        airGap,
+        noLoadData,
+        reactanceData,  // This contains x_sigma, r_a, etc.
+        reaction,       // This contains k_ad, k_aq, F_a from Étape 9
+        excitationSystem.coilSizing  // This contains L_Bmoy_cm, omega_B, S_commercial_mm2
+      );
+
+      // Build reactances object with exact mapping as specified
+      const reactances = {
+        xSigma: reactanceData.x_sigma_pu,
+        xad: machineParams.reactances_pu.x_ad,
+        xaq: machineParams.reactances_pu.x_aq,
+        xd: machineParams.reactances_pu.x_d,
+        xq: machineParams.reactances_pu.x_q,
+        x_B: machineParams.reactances_pu.x_B,
+        x_Bsigma: machineParams.reactances_pu.x_Bsigma,
+        xPrimeD: machineParams.reactances_pu.x_d_prime,
+        x2: machineParams.reactances_pu.x_2,
+        timeConstants_s: machineParams.timeConstants_s,
+        r_a: reactanceData.r_a
+      };
 
       // Build excitation object from calculated data
       const excitation = {
         Uexc: excitationSystem.electricalSpecs?.U_Excitation_V || 120,
-        Fbn: loadExcitation.F_Bn || 5000,
+        Fbn: reaction.F_Bn || 5000,
         IB: excitationSystem.electricalSpecs?.I_B_Nominal_A || 50,
         DeltaB: excitationSystem.thermal?.delta_B_A_mm2 || 2.5,
         ThetaB: 80,

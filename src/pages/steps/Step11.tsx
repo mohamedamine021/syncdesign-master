@@ -31,20 +31,8 @@ export default function Step11() {
     return v.toFixed(d);
   };
 
-  // Calculate machine parameters
-  let machineParams: any = null;
-  try {
-    machineParams = CalculationEngine.calcMachineParameters(
-      inputs,
-      nominal,
-      mainDimensions,
-      stator,
-      airGap,
-      reactances
-    );
-  } catch (e) {
-    console.error('Error calculating machine parameters:', e);
-  }
+  // Machine parameters are already calculated in the store
+  // No need to recalculate here - just use the reactances object from store
 
   return (
     <StepLayout 
@@ -59,12 +47,12 @@ export default function Step11() {
             <div className="space-y-3">
               <div className="p-3 rounded-md bg-card border border-border">
                 <p className="text-xs text-muted-foreground">Réactance longitudinale</p>
-                <p className="text-lg font-mono text-foreground font-bold">{fmt(machineParams?.xad || reactances?.xad)}</p>
+                <p className="text-lg font-mono text-foreground font-bold">{fmt(reactances?.xad)}</p>
                 <p className="text-xs text-muted-foreground">p.u.</p>
               </div>
               <div className="p-3 rounded-md bg-card border border-border">
                 <p className="text-xs text-muted-foreground">Réactance transversale</p>
-                <p className="text-lg font-mono text-foreground font-bold">{fmt(machineParams?.xaq || reactances?.xaq)}</p>
+                <p className="text-lg font-mono text-foreground font-bold">{fmt(reactances?.xaq)}</p>
                 <p className="text-xs text-muted-foreground">p.u.</p>
               </div>
             </div>
@@ -73,7 +61,7 @@ export default function Step11() {
           <FormulaResult
             label="Réactance synchrone longitudinale"
             tex={`x_d = x_\\sigma + x_{ad}`}
-            result={fmt(machineParams?.xd || (reactances?.xSigma || 0) + (reactances?.xad || 0))}
+            result={fmt(reactances?.xd)}
             unit="p.u."
           />
         </div>
@@ -82,24 +70,24 @@ export default function Step11() {
           <ResultTable
             title="Réactances & Résistances"
             rows={[
-              { label: 'Réactance dispersion', symbol: 'xσ', value: fmt(reactances.xSigma), unit: 'p.u.' },
-              { label: 'Réactance ad', symbol: 'xad', value: fmt(reactances.xad), unit: 'p.u.' },
-              { label: 'Réactance aq', symbol: 'xaq', value: fmt(reactances.xaq), unit: 'p.u.' },
-              { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(reactances.xd), unit: 'p.u.' },
-              { label: 'Réactance synchrone q', symbol: 'xq', value: fmt(reactances.xq), unit: 'p.u.' },
-              { label: 'Réactance excitation', symbol: 'xB', value: fmt(reactances?.reactances_pu?.x_B || '—'), unit: 'p.u.' },
-              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: fmt(reactances?.reactances_pu?.x_Bsigma || '—'), unit: 'p.u.' },
-              { label: 'Réactance transitoire d', symbol: "xd'", value: fmt(reactances.xPrimeD), unit: 'p.u.' },
-              { label: 'Réactance inverse', symbol: 'x2', value: fmt(reactances.x2), unit: 'p.u.' },
+              { label: 'Réactance dispersion', symbol: 'xσ', value: fmt(reactances?.xSigma) || '—', unit: 'p.u.' },
+              { label: 'Réactance ad', symbol: 'xad', value: fmt(reactances?.xad) || '—', unit: 'p.u.' },
+              { label: 'Réactance aq', symbol: 'xaq', value: fmt(reactances?.xaq) || '—', unit: 'p.u.' },
+              { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(reactances?.xd) || '—', unit: 'p.u.' },
+              { label: 'Réactance synchrone q', symbol: 'xq', value: fmt(reactances?.xq) || '—', unit: 'p.u.' },
+              { label: 'Réactance excitation', symbol: 'xB', value: fmt(reactances?.x_B) || '—', unit: 'p.u.' },
+              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: fmt(reactances?.x_Bsigma) || '—', unit: 'p.u.' },
+              { label: 'Réactance transitoire d', symbol: "xd'", value: fmt(reactances?.xPrimeD) || '—', unit: 'p.u.' },
+              { label: 'Réactance inverse', symbol: 'x2', value: fmt(reactances?.x2) || '—', unit: 'p.u.' },
             ]}
           />
 
           <ResultTable
             title="Constantes de temps"
             rows={[
-              { label: 'Temps à vide', symbol: 'Td0', value: fmt(reactances?.timeConstants_s?.T_d0 || '—'), unit: 's' },
-              { label: 'Temps transitoire', symbol: "Td'", value: fmt(reactances?.timeConstants_s?.T_d_prime || '—'), unit: 's' },
-              { label: 'Temps induit', symbol: 'Ta', value: fmt(reactances?.timeConstants_s?.T_a || '—'), unit: 's' },
+              { label: 'Temps à vide', symbol: 'Td0', value: (reactances?.timeConstants_s?.T_d0?.toFixed(3) || '—'), unit: 's' },
+              { label: 'Temps transitoire', symbol: "Td'", value: (reactances?.timeConstants_s?.T_d_prime?.toFixed(3) || '—'), unit: 's' },
+              { label: 'Temps induit', symbol: 'Ta', value: (reactances?.timeConstants_s?.T_a?.toFixed(3) || '—'), unit: 's' },
             ]}
           />
         </div>
