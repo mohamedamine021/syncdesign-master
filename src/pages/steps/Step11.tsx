@@ -87,8 +87,8 @@ export default function Step11() {
               { label: 'Réactance aq', symbol: 'xaq', value: fmt(reactances.xaq), unit: 'p.u.' },
               { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(reactances.xd), unit: 'p.u.' },
               { label: 'Réactance synchrone q', symbol: 'xq', value: fmt(reactances.xq), unit: 'p.u.' },
-              { label: 'Réactance excitation', symbol: 'xB', value: fmt(machineParams?.xB || '—'), unit: 'p.u.' },
-              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: fmt(machineParams?.xBsigma || '—'), unit: 'p.u.' },
+              { label: 'Réactance excitation', symbol: 'xB', value: fmt(reactances?.reactances_pu?.x_B || '—'), unit: 'p.u.' },
+              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: fmt(reactances?.reactances_pu?.x_Bsigma || '—'), unit: 'p.u.' },
               { label: 'Réactance transitoire d', symbol: "xd'", value: fmt(reactances.xPrimeD), unit: 'p.u.' },
               { label: 'Réactance inverse', symbol: 'x2', value: fmt(reactances.x2), unit: 'p.u.' },
             ]}
@@ -97,9 +97,9 @@ export default function Step11() {
           <ResultTable
             title="Constantes de temps"
             rows={[
-              { label: 'Temps à vide', symbol: 'Td0', value: fmt(machineParams?.Td0 || '—'), unit: 's' },
-              { label: 'Temps transitoire', symbol: "Td'", value: fmt(machineParams?.TdPrime || '—'), unit: 's' },
-              { label: 'Temps induit', symbol: 'Ta', value: fmt(machineParams?.Ta || '—'), unit: 's' },
+              { label: 'Temps à vide', symbol: 'Td0', value: fmt(reactances?.timeConstants_s?.T_d0 || '—'), unit: 's' },
+              { label: 'Temps transitoire', symbol: "Td'", value: fmt(reactances?.timeConstants_s?.T_d_prime || '—'), unit: 's' },
+              { label: 'Temps induit', symbol: 'Ta', value: fmt(reactances?.timeConstants_s?.T_a || '—'), unit: 's' },
             ]}
           />
         </div>

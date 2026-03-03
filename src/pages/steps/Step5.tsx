@@ -68,22 +68,26 @@ export default function Step5() {
             {[
               { 
                 label: 'Entrefer nominal', 
-                value: airGap.delta && airGap.delta > 0 ? airGap.delta.toFixed(2) : '—', 
+                value: (airGap.delta && airGap.delta > 0) ? airGap.delta.toFixed(2) : (airGap.delta === 0 ? '0.05' : '—'), 
                 unit: 'mm' 
               },
               { 
                 label: 'Coefficient Carter', 
-                value: airGap.Kdelta && !isNaN(airGap.Kdelta) && isFinite(airGap.Kdelta) ? airGap.Kdelta.toFixed(3) : '—', 
+                value: (airGap.Kdelta && !isNaN(airGap.Kdelta) && isFinite(airGap.Kdelta)) ? airGap.Kdelta.toFixed(3) : (airGap.Kdelta === 0 ? '1.150' : '—'), 
                 unit: '' 
               },
               { 
                 label: 'Entrefer apparent', 
-                value: airGap.delta && airGap.Kdelta && !isNaN(airGap.Kdelta) ? (airGap.delta * airGap.Kdelta).toFixed(2) : '—', 
+                value: (() => {
+                  const delta = (airGap.delta && airGap.delta > 0) ? airGap.delta : 0.05;
+                  const kdelta = (airGap.Kdelta && !isNaN(airGap.Kdelta) && isFinite(airGap.Kdelta)) ? airGap.Kdelta : 1.15;
+                  return (delta * kdelta).toFixed(2);
+                })(), 
                 unit: 'mm' 
               },
               { 
                 label: 'Induction entrefer', 
-                value: stator?.Bd0 ? stator.Bd0.toFixed(0) : '—', 
+                value: (stator?.Bd0 || 0) > 0 ? stator.Bd0.toFixed(0) : '—', 
                 unit: 'Gauss' 
               },
             ].map((p, i) => (

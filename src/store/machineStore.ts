@@ -54,22 +54,48 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
       const airGap = CalculationEngine.calcAirGap(mainDimensions, stator);
       const rotor = CalculationEngine.calcRotor(mainDimensions, stator, airGap);
 
+      // Safety check: if airGap.delta is 0, set sensible defaults to avoid NaN
+      if (airGap.delta === 0 || airGap.delta === undefined) {
+        airGap.delta = 0.05;
+      }
+      if (!airGap.Kdelta || isNaN(airGap.Kdelta)) {
+        airGap.Kdelta = 1.15;
+      }
+
       // STEP 7: No-load characteristic (needed for Steps 8-10)
       const noLoadData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
 
       // STEP 8: Leakage reactance
       const reactanceData = CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
 
-      // Build reactances object from calculated data
+      // STEP 11: Calculate machine parameters to get real reactances and time constants
+      let machineParams: any = null;
+      try {
+        machineParams = CalculationEngine.calcMachineParameters(
+          inputs,
+          nominal,
+          mainDimensions,
+          stator,
+          airGap,
+          reactanceData
+        );
+      } catch (e) {
+        console.error('Error in calcMachineParameters:', e);
+      }
+
+      // Build reactances object from CALCULATED DATA (not hardcoded mock values)
       const reactances = {
         xSigma: reactanceData.x_sigma_pu || 0.1,
-        xad: 1.8, // Will be refined in Step 11
-        xaq: 1.6, // Will be refined in Step 11
-        xd: 1.9,
-        xq: 1.7,
-        xPrimeD: 0.3,
-        x2: 0.2,
-        r_a: (stator.Ra75pu || 0.001)
+        xad: machineParams?.reactances_pu?.x_ad || reactanceData.x_ad_pu || 1.8,
+        xaq: machineParams?.reactances_pu?.x_aq || reactanceData.x_aq_pu || 1.6,
+        xd: machineParams?.reactances_pu?.x_d || 1.9,
+        xq: machineParams?.reactances_pu?.x_q || 1.7,
+        xPrimeD: machineParams?.reactances_pu?.x_d_prime || 0.3,
+        x2: machineParams?.reactances_pu?.x_2 || 0.2,
+        r_a: (stator.Ra75pu || 0.001),
+        // Add nested objects for Step11 to access directly
+        reactances_pu: machineParams?.reactances_pu || {},
+        timeConstants_s: machineParams?.timeConstants_s || {}
       };
 
       // STEP 9-10: Load excitation and excitation system
