@@ -25,7 +25,8 @@ export default function Step11() {
     );
   }
 
-  const fmt = (v: number | null | undefined, d = 3) => {
+  const fmt = (v: number | null | undefined | string, d = 3) => {
+    if (typeof v === 'string') return v; // Return string fallback as-is
     if (v === null || v === undefined || isNaN(v)) return '—';
     return v.toFixed(d);
   };
@@ -81,24 +82,24 @@ export default function Step11() {
           <ResultTable
             title="Réactances & Résistances"
             rows={[
-              { label: 'Réactance dispersion', symbol: 'xσ', value: fmt(reactances?.xSigma), unit: 'p.u.' },
-              { label: 'Réactance ad', symbol: 'xad', value: fmt(machineParams?.xad || reactances?.xad), unit: 'p.u.' },
-              { label: 'Réactance aq', symbol: 'xaq', value: fmt(machineParams?.xaq || reactances?.xaq), unit: 'p.u.' },
-              { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(machineParams?.xd), unit: 'p.u.' },
-              { label: 'Réactance synchrone q', symbol: 'xq', value: fmt(machineParams?.xq), unit: 'p.u.' },
-              { label: 'Réactance excitation', symbol: 'xB', value: fmt(machineParams?.xB), unit: 'p.u.' },
-              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: fmt(machineParams?.xBsigma), unit: 'p.u.' },
-              { label: 'Réactance transitoire d', symbol: "xd'", value: fmt(machineParams?.xdPrime), unit: 'p.u.' },
-              { label: 'Réactance inverse', symbol: 'x2', value: fmt(machineParams?.x2), unit: 'p.u.' },
+              { label: 'Réactance dispersion', symbol: 'xσ', value: fmt(reactances.xSigma), unit: 'p.u.' },
+              { label: 'Réactance ad', symbol: 'xad', value: fmt(reactances.xad), unit: 'p.u.' },
+              { label: 'Réactance aq', symbol: 'xaq', value: fmt(reactances.xaq), unit: 'p.u.' },
+              { label: 'Réactance synchrone d', symbol: 'xd', value: fmt(reactances.xd), unit: 'p.u.' },
+              { label: 'Réactance synchrone q', symbol: 'xq', value: fmt(reactances.xq), unit: 'p.u.' },
+              { label: 'Réactance excitation', symbol: 'xB', value: fmt(machineParams?.xB || '—'), unit: 'p.u.' },
+              { label: 'Réactance dispersion exc.', symbol: 'xBσ', value: fmt(machineParams?.xBsigma || '—'), unit: 'p.u.' },
+              { label: 'Réactance transitoire d', symbol: "xd'", value: fmt(reactances.xPrimeD), unit: 'p.u.' },
+              { label: 'Réactance inverse', symbol: 'x2', value: fmt(reactances.x2), unit: 'p.u.' },
             ]}
           />
 
           <ResultTable
             title="Constantes de temps"
             rows={[
-              { label: 'Temps à vide', symbol: 'Td0', value: fmt(machineParams?.Td0), unit: 's' },
-              { label: 'Temps transitoire', symbol: "Td'", value: fmt(machineParams?.TdPrime), unit: 's' },
-              { label: 'Temps induit', symbol: 'Ta', value: fmt(machineParams?.Ta), unit: 's' },
+              { label: 'Temps à vide', symbol: 'Td0', value: fmt(machineParams?.Td0 || '—'), unit: 's' },
+              { label: 'Temps transitoire', symbol: "Td'", value: fmt(machineParams?.TdPrime || '—'), unit: 's' },
+              { label: 'Temps induit', symbol: 'Ta', value: fmt(machineParams?.Ta || '—'), unit: 's' },
             ]}
           />
         </div>
