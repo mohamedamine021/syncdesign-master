@@ -9,12 +9,12 @@ interface MachineStore extends MachineState {
 }
 
 const defaultInputs: InputParams = {
-  Pn: 500,
-  Un: 6300,
-  cosPhi: 0.8,
-  f: 50,
-  nn: 750,
-  m: 3,
+  Pn: 0,
+  Un: 0,
+  cosPhi: 0,
+  f: 0,
+  nn: 0,
+  m: 0,
 };
 
 export const useMachineStore = create<MachineStore>((set, get) => ({
@@ -33,7 +33,6 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
     set((state) => ({
       inputs: { ...state.inputs, ...partial },
     }));
-    get().recalculate();
   },
 
   setCurrentStep: (step) => set({ currentStep: step }),

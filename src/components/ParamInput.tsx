@@ -19,11 +19,12 @@ export function ParamInput({ label, symbol, value, unit, onChange, min, max, ste
       <div className="flex items-center gap-2">
         <input
           type="number"
-          value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          value={value === 0 ? '' : value}
+          onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
           min={min}
           max={max}
           step={step}
+          placeholder="—"
           className="w-28 px-3 py-1.5 rounded-md border border-input bg-background text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <span className="text-xs text-muted-foreground w-12">{unit}</span>

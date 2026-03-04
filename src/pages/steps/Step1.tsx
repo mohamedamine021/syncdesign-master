@@ -9,8 +9,7 @@ export default function Step1() {
 
   useEffect(() => {
     setCurrentStep(1);
-    recalculate();
-  }, []);
+  }, [setCurrentStep]);
 
   return (
     <StepLayout
@@ -74,6 +73,20 @@ export default function Step1() {
               </div>
             </div>
           </div>
+
+          <button
+            onClick={() => {
+              const errors = CalculationEngine.validateInputs(inputs);
+              if (errors.length > 0) {
+                alert(`Veuillez corriger les erreurs :\n${errors.join('\n')}`);
+              } else {
+                recalculate();
+              }
+            }}
+            className="mt-6 w-full px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Calculer les paramètres
+          </button>
         </div>
       </div>
     </StepLayout>
