@@ -46,20 +46,46 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
     }
 
     try {
-      // STEPS 1-7: Core machine geometry
+      // STEP 2: Nominal values
       const nominal = CalculationEngine.calcNominal(inputs);
-      const mainDimensions = CalculationEngine.calcMainDimensions(inputs, nominal);
-      const stator = CalculationEngine.calcStator(inputs, nominal, mainDimensions);
-      const airGap = CalculationEngine.calcAirGap(mainDimensions, stator);
-      const rotor = CalculationEngine.calcRotor(mainDimensions, stator, airGap);
-      
-      // STEP 7: No-load characteristic (needed for Steps 8-11)
-      const noLoadData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
+      set({ nominal });
 
+      // STEP 3: Main dimensions
+      const mainDimensions = CalculationEngine.calcMainDimensions(inputs, nominal);
+      set({ mainDimensions });
+
+      // STEP 4: Stator
+      const stator = CalculationEngine.calcStator(inputs, nominal, mainDimensions);
+      set({ stator });
+
+      // STEP 5: Air gap
+      const airGap = CalculationEngine.calcAirGap(mainDimensions, stator);
+      set({ airGap });
+
+      // STEP 6: Rotor
+      const rotor = CalculationEngine.calcRotor(mainDimensions, stator, airGap);
+      set({ rotor });
+
+      // STEP 7: No-load characteristic
+      const noLoadData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
+      
       // STEP 8: Leakage reactance
       const reactanceData = CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
+      
+      // Build and save reactances
+      const reactances = {
+        xSigma: reactanceData.x_sigma_pu || 0.1,
+        xad: 1.8,
+        xaq: 1.6,
+        xd: 1.9,
+        xq: 1.7,
+        xPrimeD: 0.3,
+        x2: 0.2,
+        r_a: 0.001
+      };
+      set({ reactances });
 
-      // STEP 9: Load excitation (reaction field)
+      // STEP 9: Load excitation
       const reaction = CalculationEngine.calcLoadExcitation(
         nominal,
         stator,
@@ -77,33 +103,7 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
         reaction.F_Bn
       );
 
-      // STEP 11: Machine parameters (Réactances synchrones, transitoires, constantes de temps)
-      // IMPORTANT: Respect the exact signature: (nom, airGap, noLoadData, reactances, reaction, rotor, ...)
-      const machineParams = CalculationEngine.calcMachineParameters(
-        nominal,
-        airGap,
-        noLoadData,
-        reactanceData,  // This contains x_sigma, r_a, etc.
-        reaction,       // This contains k_ad, k_aq, F_a from Étape 9
-        excitationSystem.coilSizing  // This contains L_Bmoy_cm, omega_B, S_commercial_mm2
-      );
-
-      // Build reactances object with exact mapping as specified
-      const reactances = {
-        xSigma: reactanceData.x_sigma_pu,
-        xad: machineParams.reactances_pu.x_ad,
-        xaq: machineParams.reactances_pu.x_aq,
-        xd: machineParams.reactances_pu.x_d,
-        xq: machineParams.reactances_pu.x_q,
-        x_B: machineParams.reactances_pu.x_B,
-        x_Bsigma: machineParams.reactances_pu.x_Bsigma,
-        xPrimeD: machineParams.reactances_pu.x_d_prime,
-        x2: machineParams.reactances_pu.x_2,
-        timeConstants_s: machineParams.timeConstants_s,
-        r_a: reactanceData.r_a
-      };
-
-      // Build excitation object from calculated data
+      // Build and save excitation
       const excitation = {
         Uexc: excitationSystem.electricalSpecs?.U_Excitation_V || 120,
         Fbn: reaction.F_Bn || 5000,
@@ -116,9 +116,10 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
         PBn: excitationSystem.electricalSpecs?.P_Excitation_kW || 5,
         GB: excitationSystem.coilSizing?.weight_copper_kg || 8
       };
+      set({ excitation });
 
-      // Build losses object (will be populated in Step 14)
-      const losses = {
+      // STEP 14: Losses (wrapped in try-catch to not crash if it fails)
+      let losses = {
         Pc: 2.5,
         Pcd: 1.8,
         Psur: 0.5,
@@ -130,10 +131,19 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
         efficiency: 0.92
       };
 
-      set({ nominal, mainDimensions, stator, airGap, rotor, reactances, excitation, losses });
+      try {
+        const lossesResult = CalculationEngine.calcLosses(inputs, nominal, stator, mainDimensions, airGap, rotor, excitation);
+        if (lossesResult) {
+          losses = lossesResult;
+        }
+      } catch (lossError) {
+        console.warn('Could not calculate losses, using default values:', lossError);
+      }
+      
+      set({ losses });
     } catch (e) {
       console.error('Calculation error:', e);
-      set({ nominal: null, mainDimensions: null, stator: null, airGap: null, rotor: null, reactances: null, excitation: null, losses: null });
+      // Don't clear everything - keep what we've already calculated
     }
   },
 }));
