@@ -94,6 +94,12 @@ export interface RotorDesign {
   Ba: number;       // Induction rotor (Gauss)
 }
 
+export interface TimeConstants {
+  T_d0: number;     // Temps d'ouverture à vide (s)
+  T_d_prime: number; // Temps transitoire (s)
+  T_a: number;      // Temps d'amortissement (s)
+}
+
 export interface Reactances {
   xSigma: number;   // Réactance dispersion p.u.
   xad: number;      // Réactance longitudinale
@@ -102,6 +108,9 @@ export interface Reactances {
   xq: number;       // Réactance synchrone transversale
   xPrimeD: number;  // Réactance transitoire
   x2: number;       // Réactance inverse
+  x_B?: number;     // Réactance excitation
+  x_Bsigma?: number; // Réactance dispersion excitation
+  timeConstants_s?: TimeConstants; // Constantes de temps
 }
 
 export interface ExcitationSystem {

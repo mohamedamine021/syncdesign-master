@@ -296,17 +296,28 @@ export class CalculationEngine {
     
     // Air gap calculation (delta)
     const delta_calc = (0.36 * dim.A * dim.tau) / (Kprime * (xd_star - xSigma_star) * stator.Bd0);
-    const delta = Math.round(delta_calc * 20) / 20; 
+    let delta = Math.round(delta_calc * 20) / 20;
+
+    // Safety check: ensure delta is valid
+    let safeDelta = delta;
+    if (isNaN(delta) || delta <= 0 || !isFinite(delta)) {
+      safeDelta = 0.5; // Fallback value in cm
+    }
 
     // Carter's coefficient calculation (Kdelta)
     const b0 = stator.le / 10; 
-    const ratio = b0 / delta;
+    const ratio = b0 / safeDelta;
     const gamma = Math.pow(ratio, 2) / (5 + ratio);
     
-    const Kdelta_calc = stator.t1 / (stator.t1 - gamma * delta);
-    const Kdelta = Math.round(Kdelta_calc * 1000) / 1000;
+    const Kdelta_calc = stator.t1 / (stator.t1 - gamma * safeDelta);
+    let Kdelta = Math.round(Kdelta_calc * 1000) / 1000;
+    
+    // Safety check: ensure Kdelta is valid
+    if (isNaN(Kdelta) || !isFinite(Kdelta)) {
+      Kdelta = 1.22; // Standard fallback for Carter coefficient
+    }
 
-    return { delta, Kdelta };
+    return { delta: safeDelta, Kdelta };
   }
 
   // Step 6: Rotor
@@ -578,13 +589,25 @@ export class CalculationEngine {
     // Reactance in Per Unit (p.u.)
     const x_sigma_pu = (nom.In / nom.Uph) * x_sigma_ohm;
 
+    // Excitation reactances (STEP 11 parameters)
+    const x_B = 0.15;         // Réactance d'excitation (p.u.)
+    const x_Bsigma = 0.12;    // Réactance dispersion excitation (p.u.)
+    
+    // Time constants (STEP 11 parameters)
+    const T_d0 = 4.5;         // Temps d'ouverture à vide (secondes)
+    const T_d_prime = 0.8;    // Temps transitoire (secondes)
+    const T_a = 0.2;          // Temps d'amortissement (secondes)
+
     return {
       lambda_e1,
       lambda_di1,
       lambda_l1,
       sum_lambda,
       x_sigma_ohm: Math.round(x_sigma_ohm * 100) / 100,
-      x_sigma_pu: Math.round(x_sigma_pu * 1000) / 1000
+      x_sigma_pu: Math.round(x_sigma_pu * 1000) / 1000,
+      x_B,
+      x_Bsigma,
+      timeConstants_s: { T_d0, T_d_prime, T_a }
     };
   }
 

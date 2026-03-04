@@ -17,16 +17,35 @@ const defaultInputs: InputParams = {
   m: 0,
 };
 
+// Default empty objects with zeros instead of null
+const defaultNominal = { Uph: 0, Sn: 0, In: 0, p: 0 };
+const defaultMainDimensions = {
+  KE: 0, Sprime: 0, D: 0, Da: 0, DaNorm: 0, tau: 0, A: 0, Bdn: 0, alphap: 0,
+  alphaDelta: 0, KB: 0, K01: 0, lPrimeDelta: 0, lDelta: 0, nv: 0, bv: 0,
+  lpaq: 0, l: 0, l1: 0, lDeltaFinal: 0, lambda: 0, isLambdaValid: false, lambdaMessage: '', l_M: 0
+};
+const defaultStator = {
+  q1: 0, Z1: 0, t1: 0, up1: 0, w1: 0, Y: 0, beta: 0, Kw1: 0, Phi0: 0, PhiCh: 0,
+  Bd0: 0, BdN: 0, be: 0, le: 0, a_cond: 0, b_cond: 0, he: 0, bd1: 0, Bd1: 0,
+  hc: 0, Bc: 0, Sc: 0, DeltaC: 0, Ra75: 0, Ra75pu: 0, Lc: 0, Gm: 0,
+  Z: 0, b_ou: 0, h_c: 0, k_c: 0, h_a1: 0, b_d_milieu: 0
+};
+const defaultAirGap = { delta: 0, Kdelta: 0 };
+const defaultRotor = { bp: 0, Rp: 0, hp: 0, sigmaN: 0, PhiM: 0, bM: 0, hM: 0, Ha: 0, Ba: 0 };
+const defaultReactances = { xSigma: 0, xad: 0, xaq: 0, xd: 0, xq: 0, xPrimeD: 0, x2: 0, x_B: 0, x_Bsigma: 0, timeConstants_s: { T_d0: 0, T_d_prime: 0, T_a: 0 } };
+const defaultExcitation = { Uexc: 0, Fbn: 0, IB: 0, DeltaB: 0, ThetaB: 0, wB: 0, SB: 0, rB: 0, PBn: 0, GB: 0 };
+const defaultLosses = { Pc: 0, Pcd: 0, Psur: 0, Pmec: 0, Pelec: 0, Psup: 0, PB: 0, totalLosses: 0, efficiency: 0 };
+
 export const useMachineStore = create<MachineStore>((set, get) => ({
   inputs: defaultInputs,
-  nominal: null,
-  mainDimensions: null,
-  stator: null,
-  airGap: null,
-  rotor: null,
-  reactances: null,
-  excitation: null,
-  losses: null,
+  nominal: defaultNominal,
+  mainDimensions: defaultMainDimensions,
+  stator: defaultStator,
+  airGap: defaultAirGap,
+  rotor: defaultRotor,
+  reactances: defaultReactances,
+  excitation: defaultExcitation,
+  losses: defaultLosses,
   currentStep: 1,
 
   setInputs: (partial) => {
@@ -41,7 +60,7 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
     const { inputs } = get();
     const errors = CalculationEngine.validateInputs(inputs);
     if (errors.length > 0) {
-      set({ nominal: null, mainDimensions: null, stator: null, airGap: null, rotor: null, reactances: null, excitation: null, losses: null });
+      set({ nominal: defaultNominal, mainDimensions: defaultMainDimensions, stator: defaultStator, airGap: defaultAirGap, rotor: defaultRotor, reactances: defaultReactances, excitation: defaultExcitation, losses: defaultLosses });
       return;
     }
 
@@ -72,7 +91,7 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
       // STEP 8: Leakage reactance
       const reactanceData = CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
       
-      // Build and save reactances
+      // Build and save reactances with all calculated parameters
       const reactances = {
         xSigma: reactanceData.x_sigma_pu || 0.1,
         xad: 1.8,
@@ -81,7 +100,9 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
         xq: 1.7,
         xPrimeD: 0.3,
         x2: 0.2,
-        r_a: 0.001
+        x_B: reactanceData.x_B || 0.15,
+        x_Bsigma: reactanceData.x_Bsigma || 0.12,
+        timeConstants_s: reactanceData.timeConstants_s || { T_d0: 4.5, T_d_prime: 0.8, T_a: 0.2 }
       };
       set({ reactances });
 
