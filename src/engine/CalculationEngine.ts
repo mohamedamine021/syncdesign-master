@@ -965,12 +965,12 @@ export class CalculationEngine {
     // L'équation de votre livre utilise l_c = 36.4, nous utilisons l1_effective = dim.l1 * k_c
     const G_c = S_c * (dim.l1 * stator.k_c) * (2 * nom.p) * gamma_c * 1e-3; 
     
-    const rho_c = getSpecificLoss(B_c, 0); // Ex: ~4.0 V/kg
+    const rho_c = (getSpecificLoss(B_c, 0) || 4.0); // Ex: ~4.0 V/kg (fallback si undefined)
     const P_c_kW = Math.round(k_dc * rho_c * G_c * 1e-3 * 10) / 10;
 
     // b - Pertes dans le fer des dents statoriques (P_cd)
     const G_d = stator.Z * stator.b_d_milieu * stator.h_a1 * dim.l1 * stator.k_c * gamma_c * 1e-3;
-    const rho_cd = getSpecificLoss(B_d, 0); // Ex: ~4.33 V/kg
+    const rho_cd = (getSpecificLoss(B_d, 0) || 4.3); // Ex: ~4.33 V/kg (fallback si undefined)
     const P_cd_kW = Math.round(k_d * rho_cd * G_d * 1e-3 * 100) / 100;
 
     // c - Pertes de surface dans les épanouissements polaires (P_sur)
