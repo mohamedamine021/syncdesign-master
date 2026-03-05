@@ -5,7 +5,7 @@ import { FormulaResult } from '@/components/FormulaResult';
 import { ResultTable } from '@/components/ResultTable';
 
 export default function Step3() {
-  const { nominal, mainDimensions: dim, setCurrentStep, recalculate } = useMachineStore();
+  const { inputs, nominal, mainDimensions: dim, setCurrentStep, recalculate } = useMachineStore();
 
   useEffect(() => {
     setCurrentStep(3);
