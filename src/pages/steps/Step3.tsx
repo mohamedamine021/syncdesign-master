@@ -21,26 +21,32 @@ export default function Step3() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <FormulaResult
-            label="Coefficient KE"
-            tex={`K_E = \\sqrt{\\cos^2\\varphi + (\\sin\\varphi + x_\\sigma)^2} = ${fmt(dim.KE)}`}
-            result={fmt(dim.KE)}
+            label="Coefficient KE (impact réactance dispersion)"
+            tex={`K_E = \\sqrt{\\cos^2\\varphi + (\\sin\\varphi + x_\\sigma)^2} = \\sqrt{${inputs.cosPhi}^2 + (\\sqrt{1-${inputs.cosPhi}^2} + 0.1)^2} = ${fmt(dim.KE, 3)}`}
+            result={fmt(dim.KE, 3)}
           />
           <FormulaResult
-            label="Puissance apparente calculée"
-            tex={`S' = \\frac{K_E \\cdot P_n}{\\cos\\varphi} = ${fmt(dim.Sprime, 1)} \\; kVA`}
+            label="Puissance apparente de calcul"
+            tex={`S' = \\frac{K_E \\cdot P_n}{\\cos\\varphi} = \\frac{${fmt(dim.KE, 3)} \\times ${inputs.Pn}}{${inputs.cosPhi}} = ${fmt(dim.Sprime, 1)} \\; kVA`}
             result={fmt(dim.Sprime, 1)}
             unit="kVA"
           />
           <FormulaResult
-            label="Pas polaire"
-            tex={`\\tau = \\frac{\\pi D}{2p} = \\frac{\\pi \\times ${fmt(dim.D, 0)}}{${2 * nominal.p}} = ${fmt(dim.tau, 1)} \\; cm`}
-            result={fmt(dim.tau, 1)}
+            label="Diamètre d'alésage"
+            tex={`D \\approx 7.1 \\sqrt{p} \\cdot (S')^{0.25} = 7.1 \\sqrt{${nominal.p}} \\times ${fmt(dim.Sprime, 1)}^{0.25} \\approx ${fmt(dim.D, 0)} \\; cm`}
+            result={fmt(dim.D, 0)}
             unit="cm"
           />
           <FormulaResult
-            label="Vérification λ"
-            tex={`\\lambda = \\frac{l_\\delta}{\\tau} = \\frac{${fmt(dim.lDeltaFinal, 1)}}{${fmt(dim.tau, 1)}} = ${fmt(dim.lambda)}`}
-            result={fmt(dim.lambda)}
+            label="Pas polaire"
+            tex={`\\tau = \\frac{\\pi D}{2p} = \\frac{\\pi \\times ${fmt(dim.D, 0)}}{${2 * nominal.p}} = ${fmt(dim.tau, 2)} \\; cm`}
+            result={fmt(dim.tau, 2)}
+            unit="cm"
+          />
+          <FormulaResult
+            label="Rapport longueur/pas (λ)"
+            tex={`\\lambda = \\frac{l_\\delta}{\\tau} = \\frac{${fmt(dim.lDeltaFinal, 1)}}{${fmt(dim.tau, 2)}} = ${fmt(dim.lambda, 2)}`}
+            result={fmt(dim.lambda, 2)}
           />
         </div>
 

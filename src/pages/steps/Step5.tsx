@@ -1,18 +1,81 @@
 import { useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
+import { FormulaResult } from '@/components/FormulaResult';
 import { BH_CURVE_E31_STATOR, BH_CURVE_ROTOR } from '@/constants/magnetic_curves';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Step5() {
-  const { setCurrentStep, stator, airGap } = useMachineStore();
+  const { setCurrentStep, stator, airGap, mainDimensions: dim } = useMachineStore();
   useEffect(() => { setCurrentStep(5); }, [setCurrentStep]);
+
+  const fmt = (v: number, d = 2) => v.toFixed(d);
 
   const statorData = BH_CURVE_E31_STATOR.filter((_, i) => i % 3 === 0).map(([b, h]) => ({ B: b, H: h }));
   const rotorData = BH_CURVE_ROTOR.filter((_, i) => i % 2 === 0).map(([b, h]) => ({ B: b, H: h }));
 
   return (
     <StepLayout stepNumber={5} title="Circuit magnétique" description="Courbes B-H et calcul des FMM dans les différentes zones">
+      {stator && dim && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="space-y-4">
+            <FormulaResult
+              label="Entrefer (sécurisé)"
+              tex={`\\delta = \\frac{0.36 A \\tau}{K' (x_d - x_\\sigma) B_\\delta^0} = \\frac{0.36 \\times ${dim.A} \\times ${fmt(dim.tau, 1)}}{1.06 \\times (1.35 - 0.1) \\times ${fmt(stator.Bd0, 0)}} \\approx ${fmt(airGap.delta, 2)} \\; cm`}
+              result={fmt(airGap.delta, 2)}
+              unit="cm"
+            />
+            <FormulaResult
+              label="Coefficient de Carter"
+              tex={`K_\\delta = \\frac{t_1}{t_1 - \\gamma \\delta} = \\frac{${fmt(stator.t1, 2)}}{${fmt(stator.t1, 2)} - \\gamma \\times ${fmt(airGap.delta, 2)}} = ${fmt(airGap.Kdelta, 3)}`}
+              result={fmt(airGap.Kdelta, 3)}
+            />
+            <FormulaResult
+              label="Largeur d'ouverture d'encoche"
+              tex={`b_e = 0.47 \\cdot t_1 \\times 10 = 0.47 \\times ${fmt(stator.t1, 2)} \\times 10 = ${fmt(stator.be, 1)} \\; mm`}
+              result={fmt(stator.be, 1)}
+              unit="mm"
+            />
+            <FormulaResult
+              label="Hauteur d'encoche"
+              tex={`h_e = 2H_{bobine} + marges + cale = ${fmt(stator.he, 1)} \\; mm`}
+              result={fmt(stator.he, 1)}
+              unit="mm"
+            />
+          </div>
+          <div className="space-y-4">
+            <FormulaResult
+              label="Induction dent (saturation)"
+              tex={`B_{d1} = \\frac{B_\\delta^n \\cdot t_1 \\cdot l_\\delta}{b_{d1} \\cdot l \\cdot K_f} = \\frac{${fmt(stator.BdN, 0)} \\times ${fmt(stator.t1, 2)} \\times ${fmt(dim.lDeltaFinal, 1)}}{${fmt(stator.bd1, 2)} \\times ${fmt(dim.l, 1)} \\times 0.93} = ${fmt(stator.Bd1, 0)} \\; G`}
+              result={fmt(stator.Bd1, 0)}
+              unit="Gauss"
+            />
+            <FormulaResult
+              label="Induction culasse (saturation)"
+              tex={`B_c = \\frac{\\Phi_{ch}}{2 \\cdot h_c \\cdot l \\cdot K_f} = \\frac{${fmt(stator.PhiCh / 1e6, 2)} \\times 10^6}{2 \\times ${fmt(stator.hc, 1)} \\times ${fmt(dim.l, 1)} \\times 0.93} = ${fmt(stator.Bc, 0)} \\; G`}
+              result={fmt(stator.Bc, 0)}
+              unit="Gauss"
+            />
+            <FormulaResult
+              label="Entrefer apparent"
+              tex={`\\delta_{app} = \\delta \\times K_\\delta = ${fmt(airGap.delta, 2)} \\times ${fmt(airGap.Kdelta, 3)} = ${fmt(airGap.delta * airGap.Kdelta, 3)} \\; cm`}
+              result={fmt(airGap.delta * airGap.Kdelta, 3)}
+              unit="cm"
+            />
+            <div className="p-4 rounded-lg border border-border bg-muted/30">
+              <p className="text-xs font-semibold text-foreground mb-2">Vérification magnétique</p>
+              <p className="text-xs text-muted-foreground">
+                {stator.Bd0 < 8500 ? '✓ ' : '⚠ '}
+                Entrefer: {stator.Bd0 < 8500 ? 'OK' : 'Élevé'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {stator.Bd1 < 18000 ? '✓ ' : '⚠ '}
+                Dent: {stator.Bd1 < 18000 ? 'OK' : 'Saturée'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">Courbe B-H — Acier E31 (Stator)</h3>
