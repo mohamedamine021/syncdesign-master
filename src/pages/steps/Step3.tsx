@@ -22,30 +22,54 @@ export default function Step3() {
         <div className="space-y-4">
           <FormulaResult
             label="Coefficient KE (impact réactance dispersion)"
-            tex={`K_E = \\sqrt{\\cos^2\\varphi + (\\sin\\varphi + x_\\sigma)^2} = \\sqrt{${inputs.cosPhi}^2 + (\\sqrt{1-${inputs.cosPhi}^2} + 0.1)^2} = ${fmt(dim.KE, 3)}`}
+            tex={`K_E = \\sqrt{\\cos^2\\varphi + (\\sin\\varphi + x_\\sigma)^2}`}
             result={fmt(dim.KE, 3)}
           />
           <FormulaResult
             label="Puissance apparente de calcul"
-            tex={`S' = \\frac{K_E \\cdot P_n}{\\cos\\varphi} = \\frac{${fmt(dim.KE, 3)} \\times ${inputs.Pn}}{${inputs.cosPhi}} = ${fmt(dim.Sprime, 1)} \\; kVA`}
+            tex={`S' = \\frac{K_E \\cdot P_n}{\\cos\\varphi}`}
             result={fmt(dim.Sprime, 1)}
             unit="kVA"
           />
           <FormulaResult
-            label="Diamètre d'alésage"
-            tex={`D \\approx 7.1 \\sqrt{p} \\cdot (S')^{0.25} = 7.1 \\sqrt{${nominal.p}} \\times ${fmt(dim.Sprime, 1)}^{0.25} \\approx ${fmt(dim.D, 0)} \\; cm`}
+            label="Diamètre d'alésage (formule empirique)"
+            tex={`D \\approx 7.1 \\sqrt{p} \\cdot (S')^{1/4}`}
             result={fmt(dim.D, 0)}
             unit="cm"
           />
           <FormulaResult
+            label="Densité de flux à l'entrefer"
+            tex={`B_{dn} = c_3 - \\frac{c_4}{\\tau}`}
+            result={fmt(dim.Bdn, 0)}
+            unit="G"
+          />
+          <FormulaResult
+            label="Densité de courant linéaire"
+            tex={`A = c_1 \\ln(\\tau) + c_2`}
+            result={fmt(dim.A, 0)}
+            unit="A/cm"
+          />
+          <FormulaResult
             label="Pas polaire"
-            tex={`\\tau = \\frac{\\pi D}{2p} = \\frac{\\pi \\times ${fmt(dim.D, 0)}}{${2 * nominal.p}} = ${fmt(dim.tau, 2)} \\; cm`}
+            tex={`\\tau = \\frac{\\pi D}{2p}`}
             result={fmt(dim.tau, 2)}
             unit="cm"
           />
           <FormulaResult
+            label="Longueur théorique du stator"
+            tex={`l'_\\delta = \\frac{6.1 \\times 10^{11} S'}{\\alpha_\\delta K_B K_{01} A B_{dn} D^2 n_n}`}
+            result={fmt(dim.lPrimeDelta, 1)}
+            unit="cm"
+          />
+          <FormulaResult
+            label="Longueur réelle avec ventilation"
+            tex={`l_\\delta = l_t \\cdot l'_\\delta`}
+            result={fmt(dim.lDelta, 1)}
+            unit="cm"
+          />
+          <FormulaResult
             label="Rapport longueur/pas (λ)"
-            tex={`\\lambda = \\frac{l_\\delta}{\\tau} = \\frac{${fmt(dim.lDeltaFinal, 1)}}{${fmt(dim.tau, 2)}} = ${fmt(dim.lambda, 2)}`}
+            tex={`\\lambda = \\frac{l_\\delta}{\\tau}`}
             result={fmt(dim.lambda, 2)}
           />
         </div>
