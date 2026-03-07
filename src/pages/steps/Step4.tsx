@@ -19,35 +19,35 @@ export default function Step4() {
         <div className="space-y-4">
           <FormulaResult 
             label="Nombre total d'encoches" 
-            tex={`Z_1 = 2p \\cdot m \\cdot q_1 = ${2*nominal.p} \\times ${3} \\times ${stator.q1} = ${stator.Z1}`} 
+            tex={`Z_1 = 2p \\cdot m \\cdot q_1`} 
             result={String(stator.Z1)} 
           />
           <FormulaResult 
             label="Pas dentaire" 
-            tex={`t_1 = \\frac{\\pi D}{Z_1} = \\frac{\\pi \\times ${fmt(dim.D,0)}}{${stator.Z1}} = ${fmt(stator.t1, 2)} \\; cm`} 
+            tex={`t_1 = \\frac{\\pi D}{Z_1}`} 
             result={fmt(stator.t1, 2)} 
             unit="cm" 
           />
           <FormulaResult 
             label="Spires par phase" 
-            tex={`w_1 = p \\cdot q_1 \\cdot u_{p1} = ${nominal.p} \\times ${stator.q1} \\times ${stator.up1} = ${stator.w1}`} 
+            tex={`w_1 = p \\cdot q_1 \\cdot u_{p1}`} 
             result={String(stator.w1)} 
           />
           <FormulaResult 
             label="Flux magnétique à vide" 
-            tex={`\\Phi_0 = \\frac{4 U_{ph} \\times 10^8}{0.09 f w_1 K_{01}} = \\frac{4 \\times ${fmt(nominal.Uph, 0)} \\times 10^8}{0.09 \\times ${inputs.f} \\times ${stator.w1} \\times ${fmt(stator.Kw1, 3)}} = ${fmt(stator.Phi0 / 1e6, 2)} \\times 10^6 \\; Mx`} 
+            tex={`\\Phi_0 = \\frac{4 U_{ph} \\times 10^8}{0.09 f w_1 K_{01}}`} 
             result={`${fmt(stator.Phi0 / 1e6, 2)} × 10⁶`} 
             unit="Maxwell" 
           />
           <FormulaResult 
             label="Induction entrefer (vide)" 
-            tex={`B_\\delta^0 = \\frac{\\Phi_0}{\\alpha_\\delta \\cdot \\tau \\cdot l_\\delta} = \\frac{${fmt(stator.Phi0 / 1e6, 2)} \\times 10^6}{0.68 \\times ${fmt(dim.tau, 1)} \\times ${fmt(dim.lDeltaFinal, 1)}} = ${fmt(stator.Bd0, 0)} \\; G`} 
+            tex={`B_\\delta^0 = \\frac{\\Phi_0}{\\alpha_\\delta \\cdot \\tau \\cdot l_\\delta}`} 
             result={fmt(stator.Bd0, 0)} 
             unit="Gauss" 
           />
           <FormulaResult 
             label="Résistance stator 75°C" 
-            tex={`R_{a75} = \\frac{1}{46} \\cdot \\frac{L_c}{S_c} = \\frac{1}{46} \\times \\frac{${fmt(stator.Lc, 1)}}{${fmt(stator.Sc, 1)}} = ${fmt(stator.Ra75, 4)} \\; \\Omega`} 
+            tex={`R_{a75} = \\frac{1}{46} \\cdot \\frac{L_c}{S_c}`} 
             result={fmt(stator.Ra75, 4)} 
             unit="Ω" 
           />

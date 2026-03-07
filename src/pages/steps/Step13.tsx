@@ -70,7 +70,7 @@ export default function Step13() {
 
           <FormulaResult
             label="Surcharge statique maximale"
-            tex={`S = \\frac{I_{cc0}}{${fmt(inputs.cosPhi)}} \\times k = \\frac{${fmt(icc0)}}{${fmt(inputs.cosPhi)}} \\times ${fmt(k)}`}
+            tex={`S = \\frac{I_{cc0}}{\\cos\\varphi} \\times k`}
             result={fmt(S)}
           />
         </div>

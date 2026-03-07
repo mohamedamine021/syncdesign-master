@@ -22,7 +22,7 @@ export default function Step9() {
     <StepLayout stepNumber={9} title="Système d'excitation" description="Calcul du courant d'excitation et vérifications thermiques">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <FormulaResult label="Courant d'excitation" tex={`I_B = \\Delta_B \\cdot S_B = ${fmt(excitation.DeltaB)} \\times ${fmt(excitation.SB, 1)} = ${fmt(excitation.IB, 0)} \\; A`} result={fmt(excitation.IB, 0)} unit="A" />
+          <FormulaResult label="Courant d'excitation" tex={`I_B = \\Delta_B \\cdot S_B`} result={fmt(excitation.IB, 0)} unit="A" />
           <FormulaResult label="FMM d'excitation nominale" tex={`F_{Bn} = 2.06 \\cdot F_{\\delta 0} = ${fmt(excitation.Fbn, 0)} \\; A`} result={fmt(excitation.Fbn, 0)} unit="A" />
           <FormulaResult label="Puissance d'excitation" tex={`P_{Bn} = U_{exc} \\cdot I_{B,max} \\times 10^{-3} = ${fmt(excitation.PBn, 1)} \\; kW`} result={fmt(excitation.PBn, 1)} unit="kW" />
 

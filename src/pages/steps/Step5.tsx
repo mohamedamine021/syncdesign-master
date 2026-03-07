@@ -21,24 +21,24 @@ export default function Step5() {
           <div className="space-y-4">
             <FormulaResult
               label="Entrefer (sécurisé)"
-              tex={`\\delta = \\frac{0.36 A \\tau}{K' (x_d - x_\\sigma) B_\\delta^0} = \\frac{0.36 \\times ${dim.A} \\times ${fmt(dim.tau, 1)}}{1.06 \\times (1.35 - 0.1) \\times ${fmt(stator.Bd0, 0)}} \\approx ${fmt(airGap.delta, 2)} \\; cm`}
+              tex={`\\delta = \\frac{0.36 A \\tau}{K' (x_d - x_\\sigma) B_\\delta^0}`}
               result={fmt(airGap.delta, 2)}
               unit="cm"
             />
             <FormulaResult
               label="Coefficient de Carter"
-              tex={`K_\\delta = \\frac{t_1}{t_1 - \\gamma \\delta} = \\frac{${fmt(stator.t1, 2)}}{${fmt(stator.t1, 2)} - \\gamma \\times ${fmt(airGap.delta, 2)}} = ${fmt(airGap.Kdelta, 3)}`}
+              tex={`K_\\delta = \\frac{t_1}{t_1 - \\gamma \\delta}`}
               result={fmt(airGap.Kdelta, 3)}
             />
             <FormulaResult
               label="Largeur d'ouverture d'encoche"
-              tex={`b_e = 0.47 \\cdot t_1 \\times 10 = 0.47 \\times ${fmt(stator.t1, 2)} \\times 10 = ${fmt(stator.be, 1)} \\; mm`}
+              tex={`b_e = 0.47 \\cdot t_1 \\times 10`}
               result={fmt(stator.be, 1)}
               unit="mm"
             />
             <FormulaResult
               label="Hauteur d'encoche"
-              tex={`h_e = 2H_{bobine} + marges + cale = ${fmt(stator.he, 1)} \\; mm`}
+              tex={`h_e = 2H_{bobine} + marges + cale`}
               result={fmt(stator.he, 1)}
               unit="mm"
             />
@@ -46,19 +46,19 @@ export default function Step5() {
           <div className="space-y-4">
             <FormulaResult
               label="Induction dent (saturation)"
-              tex={`B_{d1} = \\frac{B_\\delta^n \\cdot t_1 \\cdot l_\\delta}{b_{d1} \\cdot l \\cdot K_f} = \\frac{${fmt(stator.BdN, 0)} \\times ${fmt(stator.t1, 2)} \\times ${fmt(dim.lDeltaFinal, 1)}}{${fmt(stator.bd1, 2)} \\times ${fmt(dim.l, 1)} \\times 0.93} = ${fmt(stator.Bd1, 0)} \\; G`}
+              tex={`B_{d1} = \\frac{B_\\delta^n \\cdot t_1 \\cdot l_\\delta}{b_{d1} \\cdot l \\cdot K_f}`}
               result={fmt(stator.Bd1, 0)}
               unit="Gauss"
             />
             <FormulaResult
               label="Induction culasse (saturation)"
-              tex={`B_c = \\frac{\\Phi_{ch}}{2 \\cdot h_c \\cdot l \\cdot K_f} = \\frac{${fmt(stator.PhiCh / 1e6, 2)} \\times 10^6}{2 \\times ${fmt(stator.hc, 1)} \\times ${fmt(dim.l, 1)} \\times 0.93} = ${fmt(stator.Bc, 0)} \\; G`}
+              tex={`B_c = \\frac{\\Phi_{ch}}{2 \\cdot h_c \\cdot l \\cdot K_f}`}
               result={fmt(stator.Bc, 0)}
               unit="Gauss"
             />
             <FormulaResult
               label="Entrefer apparent"
-              tex={`\\delta_{app} = \\delta \\times K_\\delta = ${fmt(airGap.delta, 2)} \\times ${fmt(airGap.Kdelta, 3)} = ${fmt(airGap.delta * airGap.Kdelta, 3)} \\; cm`}
+              tex={`\\delta_{app} = \\delta \\times K_\\delta`}
               result={fmt(airGap.delta * airGap.Kdelta, 3)}
               unit="cm"
             />

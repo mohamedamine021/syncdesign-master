@@ -22,25 +22,25 @@ export default function Step2() {
         <div className="space-y-4">
           <FormulaResult
             label="Tension par phase (couplage étoile)"
-            tex={`U_{ph} = \\frac{U_n}{\\sqrt{3}} = \\frac{${inputs.Un}}{\\sqrt{3}} = ${fmt(nominal.Uph, 1)} \\; V`}
+            tex={`U_{ph} = \\frac{U_n}{\\sqrt{3}}`}
             result={fmt(nominal.Uph, 1)}
             unit="V"
           />
           <FormulaResult
             label="Puissance apparente nominale"
-            tex={`S_n = \\frac{P_n}{\\cos\\varphi} = \\frac{${inputs.Pn}}{${inputs.cosPhi}} = ${fmt(nominal.Sn, 1)} \\; kVA`}
+            tex={`S_n = \\frac{P_n}{\\cos\\varphi}`}
             result={fmt(nominal.Sn, 1)}
             unit="kVA"
           />
           <FormulaResult
             label="Courant nominal par phase"
-            tex={`I_n = \\frac{S_n \\times 10^3}{\\sqrt{3} \\cdot U_n} = \\frac{${fmt(nominal.Sn, 1)} \\times 10^3}{\\sqrt{3} \\times ${inputs.Un}} = ${fmt(nominal.In, 1)} \\; A`}
+            tex={`I_n = \\frac{S_n \\times 10^3}{\\sqrt{3} \\cdot U_n}`}
             result={fmt(nominal.In, 1)}
             unit="A"
           />
           <FormulaResult
             label="Nombre de paires de pôles"
-            tex={`p = \\frac{60f}{n_n} = \\frac{60 \\times ${inputs.f}}{${inputs.nn}} = ${nominal.p}`}
+            tex={`p = \\frac{60f}{n_n}`}
             result={String(nominal.p)}
           />
         </div>
