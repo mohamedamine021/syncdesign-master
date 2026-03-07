@@ -24,13 +24,23 @@ export default function Step6() {
         <div className="space-y-4">
           <FormulaResult
             label="Longueur de l'entrefer"
-            tex={`\\delta = \\frac{0.36 \\cdot A \\cdot \\tau}{K' \\cdot (x_d^* - x_\\sigma^*) \\cdot B_{\\delta 0}} = ${fmt(airGap.delta)} \\; cm`}
+            tex={`\\delta = \\frac{0.36 \\cdot A \\cdot \\tau}{K' \\cdot (x_d^* - x_\\sigma^*) \\cdot B_{\\delta 0}}`}
             result={fmt(airGap.delta)}
             unit="cm"
           />
           <FormulaResult
+            label="Rapport d'ouverture d'encoche"
+            tex={`\\text{ratio} = \\frac{b_{oe}}{\\delta}`}
+            result={fmt(airGap.delta, 3)}
+          />
+          <FormulaResult
+            label="Coefficient de saturation de l'entrefer"
+            tex={`\\gamma = \\frac{\\text{ratio}^2}{5 + \\text{ratio}}`}
+            result={fmt(airGap.Kdelta, 3)}
+          />
+          <FormulaResult
             label="Coefficient de Carter"
-            tex={`K_\\delta = f\\left(\\frac{b_{oe}}{\\delta}\\right) = ${fmt(airGap.Kdelta)}`}
+            tex={`K_\\delta = \\frac{t_1}{t_1 - \\gamma \\cdot \\delta}`}
             result={fmt(airGap.Kdelta)}
           />
         </div>

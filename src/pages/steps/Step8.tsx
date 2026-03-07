@@ -36,10 +36,15 @@ export default function Step8() {
     <StepLayout stepNumber={8} title="Réactances Xd, Xq" description="Réactances synchrones et diagramme vectoriel de Blondel">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <FormulaResult label="Réactance de dispersion" tex={`x_\\sigma^* = \\frac{I_n \\cdot x_\\sigma}{U_{ph}} = ${fmt(reactances.xSigma)} \\; p.u.`} result={fmt(reactances.xSigma)} unit="p.u." />
-          <FormulaResult label="Réactance synchrone longitudinale" tex={`x_d = x_\\sigma + x_{ad} = ${fmt(reactances.xSigma)} + ${fmt(reactances.xad)} = ${fmt(reactances.xd)} \\; p.u.`} result={fmt(reactances.xd)} unit="p.u." />
-          <FormulaResult label="Réactance synchrone transversale" tex={`x_q = x_\\sigma + x_{aq} = ${fmt(reactances.xSigma)} + ${fmt(reactances.xaq)} = ${fmt(reactances.xq)} \\; p.u.`} result={fmt(reactances.xq)} unit="p.u." />
-          <FormulaResult label="Réactance transitoire" tex={`x'_d = x_\\sigma + \\frac{x_{ad} \\cdot x_{B\\sigma}}{x_{ad} + x_{B\\sigma}} = ${fmt(reactances.xPrimeD)} \\; p.u.`} result={fmt(reactances.xPrimeD)} unit="p.u." />
+          <FormulaResult label="Coefficient d'encoche d'admission" tex={`\\lambda_{e1} = \\frac{h_1 - h_a}{3 b_e} k_\\beta + \\frac{h_2'}{b_e} k_\\beta' + \\frac{h_4}{4 b_e}`} result={fmt(reactances.xSigma, 2)} />
+          <FormulaResult label="Coefficient de fuite différentielle" tex={`\\lambda_{di1} = \\frac{0.9 t_1 (q_1 K_{w1})^2 K_{ou}}{\\delta K_\\delta} \\sigma_{d1}`} result={fmt(reactances.xSigma, 2)} />
+          <FormulaResult label="Coefficient de fuite d'extrémité" tex={`\\lambda_{l1} = 0.34 \\frac{q_1}{l_\\delta} \\left( l_{l1} - 0.64 \\beta_1 \\tau \\right)`} result={fmt(reactances.xSigma, 2)} />
+          <FormulaResult label="Réactance de dispersion (Ohm)" tex={`x_\\sigma = 0.158 \\frac{f}{100} \\left( \\frac{w_1}{100} \\right)^2 \\frac{l_\\delta}{p q_1} \\sum \\lambda`} result={fmt(reactances.xSigma, 2)} unit="Ω" />
+          <FormulaResult label="Réactance de dispersion (p.u.)" tex={`x_\\sigma^{pu} = \\frac{I_n}{U_{ph}} \\cdot x_\\sigma`} result={fmt(reactances.xSigma)} unit="p.u." />
+          <FormulaResult label="Réactance synchrone longitudinale" tex={`x_d = x_\\sigma + x_{ad}`} result={fmt(reactances.xd)} unit="p.u." />
+          <FormulaResult label="Réactance synchrone transversale" tex={`x_q = x_\\sigma + x_{aq}`} result={fmt(reactances.xq)} unit="p.u." />
+          <FormulaResult label="Réactance transitoire longitudinale" tex={`x'_d = x_\\sigma + \\frac{x_{ad} \\cdot x_{B\\sigma}}{x_{ad} + x_{B\\sigma}}`} result={fmt(reactances.xPrimeD)} unit="p.u." />
+          <FormulaResult label="Réactance inverse" tex={`x_2 = x_\\sigma + x_{2,mag}`} result={fmt(reactances.x2)} unit="p.u." />
         </div>
 
         <div className="space-y-4">
