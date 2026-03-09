@@ -28,6 +28,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const currentStep = useMachineStore((s) => s.currentStep);
+  const isCalculated = useMachineStore((s) => s.isCalculated); // <-- Récupération de l'état de validation
 
   const getStepStatus = (step: number) => {
     const currentPath = location.pathname;
@@ -66,13 +67,20 @@ export function AppSidebar() {
         {STEPS.map((s) => {
           const status = getStepStatus(s.step);
           const Icon = s.icon;
+          const isLocked = !isCalculated && s.step > 1; // <-- Vérification si l'étape doit être bloquée
+
           return (
             <NavLink
               key={s.path}
               to={s.path}
+              onClick={(e) => {
+                if (isLocked) e.preventDefault(); // <-- Empêche la navigation si bloqué
+              }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md text-sm transition-all ${
-                  isActive
+                  isLocked
+                    ? 'opacity-40 cursor-not-allowed grayscale' // <-- Style pour les éléments bloqués
+                    : isActive
                     ? 'bg-sidebar-accent text-sidebar-primary font-medium'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                 }`
@@ -80,7 +88,7 @@ export function AppSidebar() {
             >
               <div className="relative">
                 <Icon size={18} />
-                {status === 'complete' && (
+                {status === 'complete' && !isLocked && (
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-success" />
                 )}
               </div>

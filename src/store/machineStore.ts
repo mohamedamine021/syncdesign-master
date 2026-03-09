@@ -3,6 +3,8 @@ import type { MachineState, InputParams } from '@/types/machine';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
 interface MachineStore extends MachineState {
+  isCalculated: boolean; // <-- Ajout pour le verrouillage des pages
+  setIsCalculated: (status: boolean) => void; // <-- Fonction pour changer le statut
   setInputs: (inputs: Partial<InputParams>) => void;
   setCurrentStep: (step: number) => void;
   recalculate: () => void;
@@ -48,9 +50,14 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
   losses: defaultLosses,
   currentStep: 1,
 
+  isCalculated: false, // <-- Initialisé à false par défaut
+
+  setIsCalculated: (status) => set({ isCalculated: status }), // <-- Mise à jour de l'état
+
   setInputs: (partial) => {
     set((state) => ({
       inputs: { ...state.inputs, ...partial },
+      isCalculated: false, // <-- Verrouiller les autres pages si l'utilisateur modifie une valeur
     }));
   },
 

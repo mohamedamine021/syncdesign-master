@@ -5,7 +5,8 @@ import { StepLayout } from '@/components/StepLayout';
 import { ParamInput } from '@/components/ParamInput';
 
 export default function Step1() {
-  const { inputs, setInputs, setCurrentStep, recalculate } = useMachineStore();
+  // <-- Ajout de isCalculated et setIsCalculated ici
+  const { inputs, setInputs, setCurrentStep, recalculate, isCalculated, setIsCalculated } = useMachineStore();
 
   useEffect(() => {
     setCurrentStep(1);
@@ -81,11 +82,16 @@ export default function Step1() {
                 alert(`Veuillez corriger les erreurs :\n${errors.join('\n')}`);
               } else {
                 recalculate();
+                setIsCalculated(true); // <-- C'est cette ligne qui débloque les autres pages
               }
             }}
-            className="mt-6 w-full px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+            className={`mt-6 w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
+              isCalculated
+                ? 'bg-success text-success-foreground' // Passe en vert quand c'est validé
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+            }`}
           >
-            Calculer les paramètres
+            {isCalculated ? 'Calcul Validé ✓' : 'Calculer les paramètres'}
           </button>
         </div>
       </div>
