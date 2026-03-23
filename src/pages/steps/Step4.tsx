@@ -7,7 +7,7 @@ import { ResultTable } from '@/components/ResultTable';
 export default function Step4() {
   const { inputs, stator, nominal, mainDimensions: dim, setCurrentStep, recalculate } = useMachineStore();
 
-  useEffect(() => { setCurrentStep(4); recalculate(); }, []);
+  useEffect(() => { setCurrentStep(4); recalculate(); }, [setCurrentStep, recalculate]);
 
   if (!stator || !nominal || !dim) return <StepLayout stepNumber={4} title="Stator"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
 
@@ -16,7 +16,8 @@ export default function Step4() {
   return (
     <StepLayout stepNumber={4} title="Enroulements, encoches et culasse du stator" description="Dimensionnement complet de la partie statorique">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 space-y-1">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Calculs des enroulements</h3>
           <FormulaResult 
             label="Nombre total d'encoches" 
             tex={`Z_1 = 2p \\cdot m \\cdot q_1`} 
@@ -53,7 +54,7 @@ export default function Step4() {
           />
 
           {/* Slot SVG */}
-          <div className="formula-card">
+          <div className="formula-card mt-6">
             <p className="text-sm text-muted-foreground font-medium mb-3">Géométrie de l'encoche</p>
             <svg viewBox="0 0 120 280" className="w-32 mx-auto" fill="none" stroke="currentColor" strokeWidth="1.5">
               <rect x="30" y="10" width="60" height="260" rx="3" className="stroke-muted-foreground" strokeDasharray="4 2" />
@@ -72,7 +73,8 @@ export default function Step4() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Résumé - Enroulements & Inductions</h3>
           <ResultTable title="Enroulements" rows={[
             { label: 'Encoches/pôle/phase', symbol: 'q₁', value: String(stator.q1) },
             { label: 'Nombre d\'encoches', symbol: 'Z₁', value: String(stator.Z1) },

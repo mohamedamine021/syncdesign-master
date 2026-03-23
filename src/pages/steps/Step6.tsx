@@ -21,7 +21,8 @@ export default function Step6() {
   return (
     <StepLayout stepNumber={6} title="Entrefer & Coefficient de Carter" description="Calcul de l'entrefer et du coefficient de Carter">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 space-y-1">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Calculs entrefer</h3>
           <FormulaResult
             label="Longueur de l'entrefer"
             tex={`\\delta = \\frac{0.36 \\cdot A \\cdot \\tau}{K' \\cdot (x_d^* - x_\\sigma^*) \\cdot B_{\\delta 0}}`}
@@ -45,12 +46,15 @@ export default function Step6() {
           />
         </div>
 
-        <ResultTable title="Résumé entrefer" rows={[
-          { label: 'Entrefer', symbol: 'δ', value: fmt(airGap.delta), unit: 'cm' },
-          { label: 'Entrefer (mm)', symbol: 'δ', value: fmt(airGap.delta * 10, 1), unit: 'mm' },
-          { label: 'Coefficient Carter', symbol: 'Kδ', value: fmt(airGap.Kdelta) },
-          { label: 'Charge linéique', symbol: 'A', value: fmt(dim.A, 0), unit: 'A/cm' },
-        ]} />
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Résumé entrefer</h3>
+          <ResultTable title="" rows={[
+            { label: 'Entrefer', symbol: 'δ', value: fmt(airGap.delta), unit: 'cm' },
+            { label: 'Entrefer (mm)', symbol: 'δ', value: fmt(airGap.delta * 10, 1), unit: 'mm' },
+            { label: 'Coefficient Carter', symbol: 'Kδ', value: fmt(airGap.Kdelta) },
+            { label: 'Charge linéique', symbol: 'A', value: fmt(dim.A, 0), unit: 'A/cm' },
+          ]} />
+        </div>
       </div>
     </StepLayout>
   );

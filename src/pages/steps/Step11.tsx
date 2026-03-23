@@ -26,13 +26,10 @@ export default function Step11() {
   }
 
   const fmt = (v: number | null | undefined | string, d = 3) => {
-    if (typeof v === 'string') return v; // Return string fallback as-is
+    if (typeof v === 'string') return v;
     if (v === null || v === undefined || isNaN(v)) return '—';
     return v.toFixed(d);
   };
-
-  // Machine parameters are already calculated in the store
-  // No need to recalculate here - just use the reactances object from store
 
   return (
     <StepLayout 
@@ -41,20 +38,18 @@ export default function Step11() {
       description="Réactances synchrones, transitoires et constantes de temps"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="rounded-lg border border-border p-5 bg-muted/30">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Réactances de réaction d'induit</h3>
-            <div className="space-y-3">
-              <div className="p-3 rounded-md bg-card border border-border">
-                <p className="text-xs text-muted-foreground">Réactance longitudinale</p>
-                <p className="text-lg font-mono text-foreground font-bold">{fmt(reactances?.xad)}</p>
-                <p className="text-xs text-muted-foreground">p.u.</p>
-              </div>
-              <div className="p-3 rounded-md bg-card border border-border">
-                <p className="text-xs text-muted-foreground">Réactance transversale</p>
-                <p className="text-lg font-mono text-foreground font-bold">{fmt(reactances?.xaq)}</p>
-                <p className="text-xs text-muted-foreground">p.u.</p>
-              </div>
+        <div className="rounded-lg border border-border p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Réactances de réaction d'induit</h3>
+          <div className="space-y-3">
+            <div className="p-3 rounded-md bg-card border border-border">
+              <p className="text-xs text-muted-foreground">Réactance longitudinale</p>
+              <p className="text-lg font-mono text-foreground font-bold">{fmt(reactances?.xad)}</p>
+              <p className="text-xs text-muted-foreground">p.u.</p>
+            </div>
+            <div className="p-3 rounded-md bg-card border border-border">
+              <p className="text-xs text-muted-foreground">Réactance transversale</p>
+              <p className="text-lg font-mono text-foreground font-bold">{fmt(reactances?.xaq)}</p>
+              <p className="text-xs text-muted-foreground">p.u.</p>
             </div>
           </div>
 
@@ -66,9 +61,10 @@ export default function Step11() {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Résumé - Réactances & Constantes</h3>
           <ResultTable
-            title="Réactances & Résistances"
+            title="Réactances"
             rows={[
               { label: 'Réactance dispersion', symbol: 'xσ', value: fmt(reactances?.xSigma) || '—', unit: 'p.u.' },
               { label: 'Réactance ad', symbol: 'xad', value: fmt(reactances?.xad) || '—', unit: 'p.u.' },

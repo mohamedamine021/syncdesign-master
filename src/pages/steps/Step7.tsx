@@ -15,7 +15,8 @@ export default function Step7() {
   return (
     <StepLayout stepNumber={7} title="Rotor & Pôles" description="Dimensionnement des pôles et de la culasse rotorique">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 space-y-1">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Calculs du rotor</h3>
           <FormulaResult label="Arc polaire" tex={`b_p = \\alpha_p \\cdot \\tau`} result={fmt(rotor.bp, 1)} unit="cm" />
           <FormulaResult label="Distance pôle (de l'arbre)" tex={`\\Delta M = K_{\\Delta M} \\cdot \\delta`} result={fmt(airGap.delta, 2)} unit="cm" />
           <FormulaResult label="Rayon d'épanouissement" tex={`R_p = \\frac{D}{2} + \\frac{8 D (\\Delta M - \\delta)}{b_p^2}`} result={fmt(rotor.Rp, 1)} unit="cm" />
@@ -28,7 +29,7 @@ export default function Step7() {
           <FormulaResult label="Induction culasse rotor" tex={`B_a = \\frac{\\Phi_M}{2 H_a l_a}`} result={fmt(rotor.Ba, 0)} unit="Gauss" />
 
           {/* Pole SVG */}
-          <div className="formula-card">
+          <div className="formula-card mt-6">
             <p className="text-sm text-muted-foreground font-medium mb-3">Profil du pôle</p>
             <svg viewBox="0 0 200 180" className="w-full max-w-xs mx-auto" fill="none" stroke="currentColor" strokeWidth="1.5">
               {/* Pole body */}
@@ -46,17 +47,20 @@ export default function Step7() {
           </div>
         </div>
 
-        <ResultTable title="Dimensions du rotor" rows={[
-          { label: 'Arc polaire', symbol: 'bp', value: fmt(rotor.bp, 1), unit: 'cm' },
-          { label: 'Rayon contour', symbol: 'Rp', value: fmt(rotor.Rp, 1), unit: 'cm' },
-          { label: 'Hauteur épanouissement', symbol: 'hp', value: fmt(rotor.hp, 1), unit: 'cm' },
-          { label: 'Largeur noyau polaire', symbol: 'bM', value: fmt(rotor.bM, 1), unit: 'cm' },
-          { label: 'Hauteur noyau polaire', symbol: 'hM', value: fmt(rotor.hM, 1), unit: 'cm' },
-          { label: 'Flux dans le pôle', symbol: 'ΦM', value: `${fmt(rotor.PhiM/1e6, 2)} × 10⁶`, unit: 'Mx' },
-          { label: 'Coeff. dispersion', symbol: 'σn', value: fmt(rotor.sigmaN, 3) },
-          { label: 'Hauteur rotor', symbol: 'Ha', value: fmt(rotor.Ha, 1), unit: 'cm' },
-          { label: 'Induction rotor', symbol: 'Ba', value: fmt(rotor.Ba, 0), unit: 'Gauss' },
-        ]} />
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Résumé - Dimensions du rotor</h3>
+          <ResultTable title="" rows={[
+            { label: 'Arc polaire', symbol: 'bp', value: fmt(rotor.bp, 1), unit: 'cm' },
+            { label: 'Rayon contour', symbol: 'Rp', value: fmt(rotor.Rp, 1), unit: 'cm' },
+            { label: 'Hauteur épanouissement', symbol: 'hp', value: fmt(rotor.hp, 1), unit: 'cm' },
+            { label: 'Largeur noyau polaire', symbol: 'bM', value: fmt(rotor.bM, 1), unit: 'cm' },
+            { label: 'Hauteur noyau polaire', symbol: 'hM', value: fmt(rotor.hM, 1), unit: 'cm' },
+            { label: 'Flux dans le pôle', symbol: 'ΦM', value: `${fmt(rotor.PhiM/1e6, 2)} × 10⁶`, unit: 'Mx' },
+            { label: 'Coeff. dispersion', symbol: 'σn', value: fmt(rotor.sigmaN, 3) },
+            { label: 'Hauteur rotor', symbol: 'Ha', value: fmt(rotor.Ha, 1), unit: 'cm' },
+            { label: 'Induction rotor', symbol: 'Ba', value: fmt(rotor.Ba, 0), unit: 'Gauss' },
+          ]} />
+        </div>
       </div>
     </StepLayout>
   );

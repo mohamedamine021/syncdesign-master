@@ -48,7 +48,8 @@ export default function Step13() {
       description="Évaluation de la capacité de surcharge de la machine synchrone"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 space-y-1">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Calculs de stabilité</h3>
           <FormulaResult
             label="Tension interne fictive"
             tex={`E_{00}'^* = 1.08`}
@@ -75,7 +76,8 @@ export default function Step13() {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Résumé - Stabilité</h3>
           <ResultTable
             title="Paramètres de réaction d'induit"
             rows={[
@@ -95,7 +97,7 @@ export default function Step13() {
             ]}
           />
 
-          <div className="rounded-lg border border-success/50 bg-success/10 p-4">
+          <div className="rounded-lg border border-success/50 bg-success/10 p-4 mt-4">
             <h4 className="text-sm font-semibold text-success mb-2">Interprétation</h4>
             <p className="text-xs text-success/90 leading-relaxed">
               S représente le multiple de puissance nominale que la machine peut fournir en surcharge avant de perdre la stabilité.

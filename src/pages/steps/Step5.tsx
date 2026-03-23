@@ -17,8 +17,9 @@ export default function Step5() {
   return (
     <StepLayout stepNumber={5} title="Circuit magnétique" description="Courbes B-H et calcul des FMM dans les différentes zones">
       {stator && dim && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="rounded-lg border border-border p-5 space-y-1">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Calculs du circuit magnétique</h3>
             <FormulaResult
               label="Entrefer (sécurisé)"
               tex={`\\delta = \\frac{0.36 A \\tau}{K' (x_d - x_\\sigma) B_\\delta^0}`}
@@ -42,8 +43,6 @@ export default function Step5() {
               result={fmt(stator.he, 1)}
               unit="mm"
             />
-          </div>
-          <div className="space-y-4">
             <FormulaResult
               label="Induction dent (saturation)"
               tex={`B_{d1} = \\frac{B_\\delta^n \\cdot t_1 \\cdot l_\\delta}{b_{d1} \\cdot l \\cdot K_f}`}
@@ -62,7 +61,7 @@ export default function Step5() {
               result={fmt(airGap.delta * airGap.Kdelta, 3)}
               unit="cm"
             />
-            <div className="p-4 rounded-lg border border-border bg-muted/30">
+            <div className="mt-4 p-4 rounded-lg border border-border bg-muted/30">
               <p className="text-xs font-semibold text-foreground mb-2">Vérification magnétique</p>
               <p className="text-xs text-muted-foreground">
                 {stator.Bd0 < 8500 ? '✓ ' : '⚠ '}
@@ -74,12 +73,57 @@ export default function Step5() {
               </p>
             </div>
           </div>
+
+          <div className="rounded-lg border border-border p-5 bg-muted/30">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Points de fonctionnement magnétique</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {[
+                { label: 'Bδ₀ (entrefer)', value: stator.Bd0.toFixed(0), unit: 'Gauss' },
+                { label: 'Bδₙ (charge)', value: stator.BdN.toFixed(0), unit: 'Gauss' },
+                { label: 'Bd₁ (dent)', value: stator.Bd1.toFixed(0), unit: 'Gauss' },
+                { label: 'Bc (culasse)', value: stator.Bc.toFixed(0), unit: 'Gauss' },
+              ].map((p, i) => (
+                <div key={i} className="p-3 rounded-md bg-card border border-border text-center">
+                  <p className="text-xs text-muted-foreground">{p.label}</p>
+                  <p className="result-highlight text-lg mt-1">{p.value}</p>
+                  <p className="text-xs text-muted-foreground">{p.unit}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-border p-4 bg-card">
+              <p className="text-xs font-semibold text-foreground mb-3">Paramètres entrefer</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-muted-foreground">Entrefer nom.</p>
+                  <p className="font-mono font-bold">{(airGap.delta && airGap.delta > 0) ? airGap.delta.toFixed(2) : (airGap.delta === 0 ? '0.05' : '—')} mm</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Coeff. Carter</p>
+                  <p className="font-mono font-bold">{(airGap.Kdelta && !isNaN(airGap.Kdelta) && isFinite(airGap.Kdelta)) ? airGap.Kdelta.toFixed(3) : (airGap.Kdelta === 0 ? '1.150' : '—')}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Entrefer app.</p>
+                  <p className="font-mono font-bold">{(() => {
+                    const delta = (airGap.delta && airGap.delta > 0) ? airGap.delta : 0.05;
+                    const kdelta = (airGap.Kdelta && !isNaN(airGap.Kdelta) && isFinite(airGap.Kdelta)) ? airGap.Kdelta : 1.15;
+                    return (delta * kdelta).toFixed(2);
+                  })()} mm</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Induction entrefer</p>
+                  <p className="font-mono font-bold">{(stator?.Bd0 || 0) > 0 ? stator.Bd0.toFixed(0) : '—'} G</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <div className="rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">Courbe B-H — Acier E31 (Stator)</h3>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={300}>
             <LineChart data={statorData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="B" label={{ value: 'B (Gauss)', position: 'insideBottom', offset: -5, style: { fill: 'hsl(var(--muted-foreground))' } }} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
@@ -92,7 +136,7 @@ export default function Step5() {
 
         <div className="rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">Courbe B-H — Acier Rotor (1-2mm)</h3>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={300}>
             <LineChart data={rotorData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="B" label={{ value: 'B (Gauss)', position: 'insideBottom', offset: -5, style: { fill: 'hsl(var(--muted-foreground))' } }} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
@@ -103,66 +147,6 @@ export default function Step5() {
           </ResponsiveContainer>
         </div>
       </div>
-
-      {stator && (
-        <div className="mt-6 rounded-lg border border-border p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Points de fonctionnement</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Bδ₀ (entrefer)', value: stator.Bd0.toFixed(0), unit: 'Gauss' },
-              { label: 'Bδₙ (charge)', value: stator.BdN.toFixed(0), unit: 'Gauss' },
-              { label: 'Bd₁ (dent)', value: stator.Bd1.toFixed(0), unit: 'Gauss' },
-              { label: 'Bc (culasse)', value: stator.Bc.toFixed(0), unit: 'Gauss' },
-            ].map((p, i) => (
-              <div key={i} className="p-3 rounded-md bg-muted/50 border border-border text-center">
-                <p className="text-xs text-muted-foreground">{p.label}</p>
-                <p className="result-highlight text-lg mt-1">{p.value}</p>
-                <p className="text-xs text-muted-foreground">{p.unit}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {airGap && (
-        <div className="mt-6 rounded-lg border border-border p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Paramètres de l'entrefer</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { 
-                label: 'Entrefer nominal', 
-                value: (airGap.delta && airGap.delta > 0) ? airGap.delta.toFixed(2) : (airGap.delta === 0 ? '0.05' : '—'), 
-                unit: 'mm' 
-              },
-              { 
-                label: 'Coefficient Carter', 
-                value: (airGap.Kdelta && !isNaN(airGap.Kdelta) && isFinite(airGap.Kdelta)) ? airGap.Kdelta.toFixed(3) : (airGap.Kdelta === 0 ? '1.150' : '—'), 
-                unit: '' 
-              },
-              { 
-                label: 'Entrefer apparent', 
-                value: (() => {
-                  const delta = (airGap.delta && airGap.delta > 0) ? airGap.delta : 0.05;
-                  const kdelta = (airGap.Kdelta && !isNaN(airGap.Kdelta) && isFinite(airGap.Kdelta)) ? airGap.Kdelta : 1.15;
-                  return (delta * kdelta).toFixed(2);
-                })(), 
-                unit: 'mm' 
-              },
-              { 
-                label: 'Induction entrefer', 
-                value: (stator?.Bd0 || 0) > 0 ? stator.Bd0.toFixed(0) : '—', 
-                unit: 'Gauss' 
-              },
-            ].map((p, i) => (
-              <div key={i} className="p-3 rounded-md bg-muted/50 border border-border text-center">
-                <p className="text-xs text-muted-foreground">{p.label}</p>
-                <p className="result-highlight text-lg mt-1">{p.value}</p>
-                <p className="text-xs text-muted-foreground">{p.unit}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </StepLayout>
   );
 }

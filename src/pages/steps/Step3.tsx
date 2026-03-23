@@ -10,7 +10,7 @@ export default function Step3() {
   useEffect(() => {
     setCurrentStep(3);
     recalculate();
-  }, []);
+  }, [setCurrentStep, recalculate]);
 
   if (!dim || !nominal) return <StepLayout stepNumber={3} title="Dimensions principales"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
 
@@ -19,7 +19,8 @@ export default function Step3() {
   return (
     <StepLayout stepNumber={3} title="Dimensions principales" description="Diamètres, pas polaire et longueur du stator">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 space-y-1">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Calculs des dimensions</h3>
           <FormulaResult
             label="Coefficient KE (impact réactance dispersion)"
             tex={`K_E = \\sqrt{\\cos^2\\varphi + (\\sin\\varphi + x_\\sigma)^2}`}
@@ -74,9 +75,10 @@ export default function Step3() {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Résumé des dimensions</h3>
           <ResultTable
-            title="Dimensions du stator"
+            title=""
             rows={[
               { label: 'Diamètre intérieur', symbol: 'D', value: fmt(dim.D, 0), unit: 'cm' },
               { label: 'Diamètre extérieur', symbol: 'Da', value: fmt(dim.Da, 1), unit: 'cm' },
@@ -89,7 +91,7 @@ export default function Step3() {
               { label: 'Ratio λ', symbol: 'λ', value: fmt(dim.lambda, 2) },
             ]}
           />
-          <div className={`p-3 rounded-md border text-sm ${dim.lambda >= 1 && dim.lambda <= 3 ? 'border-success/50 bg-success/10 text-success' : 'border-warning/50 bg-warning/10 text-warning'}`}>
+          <div className={`mt-4 p-3 rounded-md border text-sm ${dim.lambda >= 1 && dim.lambda <= 3 ? 'border-success/50 bg-success/10 text-success' : 'border-warning/50 bg-warning/10 text-warning'}`}>
             {dim.lambda >= 1 && dim.lambda <= 3
               ? '✓ λ est dans les normes (1 ≤ λ ≤ 3)'
               : '⚠ λ hors normes — vérifiez les dimensions'}

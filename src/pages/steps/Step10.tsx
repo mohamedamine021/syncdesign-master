@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 
 export default function Step10() {
   const { inputs, losses, nominal, stator, reactances, excitation, setCurrentStep, recalculate } = useMachineStore();
-  useEffect(() => { setCurrentStep(10); recalculate(); }, []);
+  useEffect(() => { setCurrentStep(10); recalculate(); }, [setCurrentStep, recalculate]);
 
   if (!losses) return <StepLayout stepNumber={10} title="Dashboard"><p className="text-destructive">Calcul impossible.</p></StepLayout>;
 
@@ -43,7 +43,7 @@ export default function Step10() {
   return (
     <StepLayout stepNumber={10} title="Dashboard final" description="Synthèse, pertes, rendement et vérifications">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Traffic lights */}
+        {/* Verification checks and efficiency */}
         <div className="rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">Vérifications</h3>
           <div className="space-y-3">
@@ -69,7 +69,7 @@ export default function Step10() {
           <h3 className="text-sm font-semibold text-foreground mb-4">Répartition des pertes ({fmt(losses.totalLosses, 1)} kW)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={lossData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, value }) => `${name}: ${value} kW`}>
+              <Pie data={lossData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, value }) => `${name}: ${value} kW`}>
                 {lossData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}

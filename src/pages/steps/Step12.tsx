@@ -45,7 +45,8 @@ export default function Step12() {
       description="Calcul des courants de court-circuit en régime à vide et en charge"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 space-y-1">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Calculs court-circuit</h3>
           <FormulaResult
             label="Courant de court-circuit à vide"
             tex={`I_{cc0} = \\frac{1}{x_d}`}
@@ -60,7 +61,7 @@ export default function Step12() {
             unit="A"
           />
 
-          <div className="rounded-lg border border-border p-4 bg-warning/10">
+          <div className="mt-4 rounded-lg border border-border p-4 bg-warning/10">
             <h4 className="text-sm font-semibold text-foreground mb-3">Courant de court-circuit réel</h4>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -74,7 +75,8 @@ export default function Step12() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Résumé court-circuit</h3>
           <ResultTable
             title="Données d'entrée"
             rows={[

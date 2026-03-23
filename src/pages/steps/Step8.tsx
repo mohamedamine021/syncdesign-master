@@ -35,7 +35,8 @@ export default function Step8() {
   return (
     <StepLayout stepNumber={8} title="Réactances Xd, Xq" description="Réactances synchrones et diagramme vectoriel de Blondel">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+        <div className="rounded-lg border border-border p-5 space-y-1">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Calculs des réactances</h3>
           <FormulaResult label="Coefficient d'encoche d'admission" tex={`\\lambda_{e1} = \\frac{h_1 - h_a}{3 b_e} k_\\beta + \\frac{h_2'}{b_e} k_\\beta' + \\frac{h_4}{4 b_e}`} result={fmt(reactances.xSigma, 2)} />
           <FormulaResult label="Coefficient de fuite différentielle" tex={`\\lambda_{di1} = \\frac{0.9 t_1 (q_1 K_{w1})^2 K_{ou}}{\\delta K_\\delta} \\sigma_{d1}`} result={fmt(reactances.xSigma, 2)} />
           <FormulaResult label="Coefficient de fuite d'extrémité" tex={`\\lambda_{l1} = 0.34 \\frac{q_1}{l_\\delta} \\left( l_{l1} - 0.64 \\beta_1 \\tau \\right)`} result={fmt(reactances.xSigma, 2)} />
@@ -47,21 +48,22 @@ export default function Step8() {
           <FormulaResult label="Réactance inverse" tex={`x_2 = x_\\sigma + x_{2,mag}`} result={fmt(reactances.x2)} unit="p.u." />
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-lg border border-border p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Diagramme vectoriel de Blondel</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={diagramPoints} margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
+        <div className="rounded-lg border border-border p-5 bg-muted/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Diagramme vectoriel & Résumé</h3>
+          <div className="rounded-lg border border-border p-4 mb-4 bg-card">
+            <p className="text-xs font-semibold text-foreground mb-2">Diagramme de Blondel (p.u.)</p>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={diagramPoints} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="x" type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Axe d (p.u.)', position: 'insideBottom', offset: -10, style: { fill: 'hsl(var(--muted-foreground))' } }} />
-                <YAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} label={{ value: 'Axe q (p.u.)', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }} />
+                <XAxis dataKey="x" type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} label={{ value: 'Axe d', position: 'insideBottom', offset: -8, style: { fill: 'hsl(var(--muted-foreground))' } }} />
+                <YAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} label={{ value: 'Axe q', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }} />
                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
-                <Line type="linear" dataKey="y" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ fill: 'hsl(var(--accent))', r: 4 }} />
+                <Line type="linear" dataKey="y" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ fill: 'hsl(var(--accent))', r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          <ResultTable title="Résumé des réactances" rows={[
+          <ResultTable title="Réactances" rows={[
             { label: 'Réactance de dispersion', symbol: 'xσ', value: fmt(reactances.xSigma), unit: 'p.u.' },
             { label: 'Réactance xad', symbol: 'xad', value: fmt(reactances.xad), unit: 'p.u.' },
             { label: 'Réactance xaq', symbol: 'xaq', value: fmt(reactances.xaq), unit: 'p.u.' },

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
 export default function Step14() {
@@ -83,7 +83,7 @@ export default function Step14() {
       description="Calcul complet des pertes et du rendement global de la machine synchrone"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Traffic lights and efficiency */}
+        {/* Verification checks and efficiency */}
         <div className="rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">Vérifications & critères</h3>
           <div className="space-y-3">
@@ -108,9 +108,9 @@ export default function Step14() {
         {/* Losses pie chart */}
         <div className="rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">Répartition des pertes ({fmt(finalLosses.totalLosses, 1)} kW)</h3>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={340}>
             <PieChart>
-              <Pie data={lossData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, value }) => `${value.toFixed(1)} kW`}>
+              <Pie data={lossData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={95} label={({ name, value }) => `${value.toFixed(1)} kW`}>
                 {lossData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
