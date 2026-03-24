@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
@@ -38,9 +38,10 @@ const sym = {
 export default function Step5() {
   const { inputs, nominal, mainDimensions: dim, stator, setCurrentStep } = useMachineStore();
 
-  // Call setCurrentStep on every render (side effect)
-  useMemo(() => {
-    setCurrentStep(5);
+  useEffect(() => {
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(5);
+    }
   }, [setCurrentStep]);
 
   // Calculate air gap on-demand using useMemo

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
@@ -43,7 +43,13 @@ const sym = {
 // ============ STEP 7: NO-LOAD CHARACTERISTIC ============
 export default function Step7() {
   const { inputs, nominal, mainDimensions: dim, stator, airGap, setCurrentStep } = useMachineStore();
-  setCurrentStep?.(7);
+
+  // Update step on mount
+  useEffect(() => {
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(7);
+    }
+  }, [setCurrentStep]);
 
   // ============ USEMEMO: CALCULATE OR RETRIEVE ============
   const noLoadData = useMemo(() => {

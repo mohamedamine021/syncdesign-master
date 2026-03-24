@@ -8,7 +8,11 @@ import { CalculationEngine } from '@/engine/CalculationEngine';
 export default function Step14() {
   const { inputs, losses, nominal, stator, reactances, excitation, airGap, mainDimensions, setCurrentStep } = useMachineStore();
   
-  useEffect(() => { setCurrentStep(14); }, [setCurrentStep]);
+  useEffect(() => { 
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(14);
+    }
+  }, [setCurrentStep]);
 
   // Calculate losses and efficiency if not already calculated
   let finalLosses = losses;

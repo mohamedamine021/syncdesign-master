@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
@@ -92,10 +92,12 @@ export default function Step8() {
     }
   }, [hasRequiredData, inputs, nominal, stator, airGap, mainDimensions, reactances]);
 
-  // Défintie setCurrentStep
-  if (typeof setCurrentStep === 'function') {
-    setCurrentStep(8);
-  }
+  // Update step on mount
+  useEffect(() => {
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(8);
+    }
+  }, [setCurrentStep]);
 
   // Vérification d'erreur : pas de données disponibles
   if (!hasRequiredData) {
@@ -150,9 +152,7 @@ export default function Step8() {
       description="Calcul des réactances synchrones longitudinale (Xd) et transversale (Xq), réactance de dispersion (Xσ)"
     >
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* ================================================================ */
         {/* COLONNE GAUCHE : Cartes Résumé + ResultTable */}
-        {/* ================================================================ */}
         <div className="space-y-6">
           {/* Cartes Récapitulatives */}
           <div className="grid grid-cols-2 gap-4">

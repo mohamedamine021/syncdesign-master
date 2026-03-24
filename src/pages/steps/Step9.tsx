@@ -40,12 +40,13 @@ const sym = {
 // Step9: Système d'excitation (Excitation System)
 // ============================================================================
 export default function Step9() {
-  const { inputs, nominal, mainDimensions: dim, airGap, stator, rotor, excitation, setCurrentStep, recalculate } = useMachineStore();
+  const { inputs, nominal, mainDimensions: dim, airGap, stator, rotor, excitation, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
-    setCurrentStep(9);
-    recalculate();
-  }, [setCurrentStep, recalculate]);
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(9);
+    }
+  }, [setCurrentStep]);
 
   // Calcul useMemo : vérifie si excitation existe, sinon appelle calcExcitationSystem
   const excitationData = useMemo(() => {

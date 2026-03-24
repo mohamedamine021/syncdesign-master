@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
@@ -64,8 +64,10 @@ export default function Step4() {
   }, [inputs, nominal, mainDimensions, stator]);
 
   // Update step on mount
-  useMemo(() => {
-    setCurrentStep(4);
+  useEffect(() => {
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(4);
+    }
   }, [setCurrentStep]);
 
   // Error state: missing required inputs

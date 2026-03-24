@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
@@ -58,8 +58,6 @@ export default function Step3() {
 
   // Use useMemo to compute dimensions if not already in store
   const dim = useMemo(() => {
-    setCurrentStep(3);
-    
     // If already calculated, return it
     if (mainDimensions) {
       return mainDimensions;
@@ -74,7 +72,14 @@ export default function Step3() {
       console.error('[Step3] Error computing main dimensions:', err);
       return null;
     }
-  }, [inputs, nominal, mainDimensions, setCurrentStep]);
+  }, [inputs, nominal, mainDimensions]);
+
+  // Update step on mount
+  useEffect(() => {
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(3);
+    }
+  }, [setCurrentStep]);
 
   // If calculation failed, show error
   if (!dim) {

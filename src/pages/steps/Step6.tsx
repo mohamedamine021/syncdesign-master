@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
@@ -52,7 +52,12 @@ export default function Step6() {
     }
   }, [dim, stator, airGap]);
 
-  setCurrentStep?.(6);
+  // Update step on mount
+  useEffect(() => {
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(6);
+    }
+  }, [setCurrentStep]);
 
   // Error handling: Check required inputs
   if (!inputs?.Pn || !nominal || !dim || !stator || !airGap) {

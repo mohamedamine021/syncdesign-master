@@ -9,7 +9,9 @@ export default function Step13() {
   const { inputs, nominal, reactances, stator, airGap, mainDimensions, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
-    setCurrentStep(13);
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(13);
+    }
   }, [setCurrentStep]);
 
   const fmt = (v: number | null | undefined, d = 2) => {

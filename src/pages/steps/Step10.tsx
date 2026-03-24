@@ -55,7 +55,9 @@ export default function Step10() {
   } = useMachineStore();
 
   useEffect(() => {
-    setCurrentStep(10);
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(10);
+    }
   }, [setCurrentStep]);
 
   // Formule de formatage pour les nombres

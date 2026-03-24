@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 import { StepLayout } from '@/components/StepLayout';
@@ -78,6 +78,12 @@ export default function Step2() {
   // EFFECT: Update current step
   // ============================================================================
 
+  useEffect(() => {
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(2);
+    }
+  }, [setCurrentStep]);
+
   if (!calculatedNominal) {
     return (
       <StepLayout
@@ -95,8 +101,6 @@ export default function Step2() {
       </StepLayout>
     );
   }
-
-  setCurrentStep(2);
 
   const fmt = (v: number, d = 2) => {
     if (!Number.isFinite(v)) return '—';

@@ -9,7 +9,9 @@ export default function Step11() {
   const { inputs, nominal, reactances, stator, airGap, mainDimensions, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
-    setCurrentStep(11);
+    if (typeof setCurrentStep === 'function') {
+      setCurrentStep(11);
+    }
   }, [setCurrentStep]);
 
   // Safety check: ensure all required data is available
