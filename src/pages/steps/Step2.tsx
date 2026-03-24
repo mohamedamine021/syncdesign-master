@@ -114,7 +114,7 @@ export default function Step2() {
       description="Calcul automatique des grandeurs nominales de la machine"
     >
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* ============================================================================ */
+        {/* ============================================================================ */}
         {/* LEFT COLUMN: Summary Cards + Results Table */}
         {/* ============================================================================ */}
         <div className="space-y-6">

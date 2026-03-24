@@ -111,10 +111,8 @@ export default function Step9() {
       title="Système d'excitation" 
       description="Calcul du courant d'excitation et vérifications thermiques"
     >
-      <div className="grid grid-cols-1 xl:cols-2 gap-8">
-        {/* ================================================================
-            COLONNE GAUCHE: Cartes résumé + ResultTable
-            ================================================================ */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* LEFT COLUMN: Summary Cards + Results Table */}
         <div className="space-y-4">
           {/* Cartes résumé principales */}
           <div className="grid grid-cols-2 gap-3">
