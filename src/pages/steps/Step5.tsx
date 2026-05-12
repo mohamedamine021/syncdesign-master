@@ -1,15 +1,18 @@
-import { useMemo, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
-// Safe HTML-based math rendering components (no KaTeX/LaTeX to avoid bundler errors)
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANTS HTML POUR RENDU MATHÉMATIQUE SÉCURISÉ (ZÉRO LATEX)
+// ─────────────────────────────────────────────────────────────────────────────
 function Formula({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-card dark:bg-slate-950 p-4 rounded-lg border border-border shadow-sm">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{label}</p>
-      <div className="flex justify-center items-center py-2 overflow-x-auto text-foreground">
+    <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm mb-4">
+      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">{label}</p>
+      <div className="flex justify-center items-center py-2 overflow-x-auto text-slate-800 dark:text-slate-200 text-sm font-serif">
         {children}
       </div>
     </div>
@@ -19,249 +22,220 @@ function Formula({ label, children }: { label: string; children: React.ReactNode
 function Frac({ num, den }: { num: React.ReactNode; den: React.ReactNode }) {
   return (
     <span className="inline-flex flex-col items-center mx-1 align-middle">
-      <span className="border-b border-current px-1 leading-tight text-sm">{num}</span>
-      <span className="px-1 leading-tight text-sm">{den}</span>
+      <span className="border-b border-current px-1 leading-tight text-sm pb-0.5">{num}</span>
+      <span className="px-1 leading-tight text-sm pt-0.5">{den}</span>
     </span>
   );
 }
 
 const sym = {
   dot: <span className="mx-0.5">·</span>,
-  sqrt3: (
-    <span className="inline-flex items-center mx-1">
-      <span className="text-lg mr-0.5">√</span>
-      <span className="border-t border-current px-1">3</span>
-    </span>
-  ),
+  delta: <span className="mx-0.5 italic">δ</span>,
+  gamma: <span className="mx-0.5 italic">γ</span>,
+  tau: <span className="mx-0.5 italic">τ</span>,
+  approx: <span className="mx-1">≈</span>,
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANT PRINCIPAL : STEP 5
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Step5() {
-  const { inputs, nominal, mainDimensions: dim, stator, setCurrentStep } = useMachineStore();
+  const { mainDimensions, stator, setCurrentStep } = useMachineStore();
 
+  // 1. Sécurité anti-boucle infinie pour l'étape
   useEffect(() => {
     if (typeof setCurrentStep === 'function') {
       setCurrentStep(5);
     }
   }, [setCurrentStep]);
 
-  // Calculate air gap on-demand using useMemo
-  const airGap = useMemo(() => {
-    // Safety check: verify all required inputs exist
-    if (!dim || !stator) {
+  // 2. Délégation au moteur + variables d'affichage pédagogiques
+  const results = useMemo(() => {
+    if (
+      !mainDimensions || !mainDimensions.A || !mainDimensions.tau ||
+      !stator || !stator.Bd0 || !stator.be || !stator.t1
+    ) {
       return null;
     }
 
     try {
-      // Call CalculationEngine.calcAirGap with required parameters
-      // Arguments: (dim: MainDimensions, stator: StatorDesign, xd_star?, xSigma_star?, Kprime?)
-      const result = CalculationEngine.calcAirGap(dim, stator);
-      return result;
-    } catch (e) {
-      console.error('[Step5] Error calculating air gap:', e);
+      // ── Résultats finaux via le moteur (source de vérité) ──
+      const engine = CalculationEngine.calcAirGap(mainDimensions, stator);
+
+      // ── Constantes de conception (identiques aux défauts du moteur) ──
+      const xd_star    = 1.35;
+      const xSigma_star = 0.1;
+      const Kprime     = 1.06;
+
+      // ── Variables intermédiaires pédagogiques (affichage tableau) ──
+      // CORRECTION : b0 = stator.be / 10 (ouverture d'encoche, pas l'encombrement le)
+      const delta_calc  = (0.36 * mainDimensions.A * mainDimensions.tau) /
+                          (Kprime * (xd_star - xSigma_star) * stator.Bd0);
+      const b0          = stator.be / 10;
+      const ratio       = b0 / engine.delta;
+      const gamma       = Math.pow(ratio, 2) / (5 + ratio);
+      const Kdelta_calc = stator.t1 / (stator.t1 - gamma * engine.delta);
+
+      return {
+        // Résultats finaux du moteur
+        delta:        engine.delta,
+        Kdelta:       engine.Kdelta,
+        // Variables intermédiaires pour le tableau détaillé
+        delta_calc,
+        b0,
+        ratio,
+        gamma,
+        Kdelta_calc,
+        // Constantes exposées dans la bannière
+        xd_star,
+        xSigma_star,
+        Kprime,
+      };
+
+    } catch (error) {
+      console.error("Erreur lors du calcul de l'entrefer :", error);
       return null;
     }
-  }, [dim, stator]);
+  }, [mainDimensions, stator]);
 
-  // Format numbers safely
+  // Formatage des valeurs
   const fmt = (v: number | null | undefined, d = 2): string => {
-    if (v === null || v === undefined || !Number.isFinite(v)) {
-      return '—';
-    }
-    return v.toFixed(d);
+    if (v === null || v === undefined || isNaN(v as number)) return '—';
+    return (v as number).toFixed(d);
   };
 
-  // Error handling: if critical inputs are missing, show error state
-  if (!inputs || !nominal || !dim || !stator) {
+  // 3. Bouclier d'erreur si données manquantes
+  if (!results) {
     return (
-      <StepLayout
-        stepNumber={5}
-        title="Entrefer & Coefficient de Carter"
-        description="Calcul de l'entrefer et du coefficient de Carter"
-      >
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm text-destructive font-semibold">Erreur de calcul</p>
-          <p className="text-xs text-destructive/80 mt-1">
-            Paramètres manquants: vérifiez que les étapes précédentes sont complètes.
+      <StepLayout stepNumber={5} title="Step 5 : Air Gap">
+        <div className="p-6 rounded-lg border border-destructive/30 bg-destructive/10">
+          <p className="text-destructive font-bold">Erreur : Paramètres manquants pour le calcul de l'entrefer.</p>
+          <p className="text-destructive/80 text-sm mt-2">
+            Veuillez vous assurer que l'Étape 3 (Dimensions) et l'Étape 4 (Stator) ont été validées.
           </p>
         </div>
       </StepLayout>
     );
   }
 
-  // If air gap calculation failed, show error
-  if (!airGap) {
-    return (
-      <StepLayout
-        stepNumber={5}
-        title="Entrefer & Coefficient de Carter"
-        description="Calcul de l'entrefer et du coefficient de Carter"
-      >
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm text-destructive font-semibold">Erreur de calcul</p>
-          <p className="text-xs text-destructive/80 mt-1">
-            Impossible de calculer les paramètres de l'entrefer. Vérifiez les données d'entrée.
-          </p>
-        </div>
-      </StepLayout>
-    );
-  }
-
+  // 4. Rendu de la page
   return (
     <StepLayout
       stepNumber={5}
-      title="Entrefer & Coefficient de Carter"
-      description="Calcul de l'entrefer et du coefficient de Carter"
+      title="Step 5 : Air Gap"
+      description="Calcul détaillé de l'entrefer mécanique et du coefficient de Carter"
     >
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* LEFT COLUMN: Summary Cards & Results Table */}
+
+        {/* ================================================================ */}
+        {/* COLONNE GAUCHE : CARTES RÉSUMÉ ET TABLEAUX                       */}
+        {/* ================================================================ */}
         <div className="space-y-6">
-          {/* Summary Cards */}
+
+          {/* Cartes KPI (Key Performance Indicators) */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg border border-border bg-card p-4 text-center">
-              <p className="text-xs text-muted-foreground font-semibold mb-2">ENTREFER</p>
-              <p className="text-2xl font-bold font-mono text-foreground">{fmt(airGap.delta, 2)}</p>
-              <p className="text-xs text-muted-foreground mt-1">cm</p>
+            <div className="rounded-lg border border-border p-5 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">Entrefer Arrondi (δ)</p>
+              <p className="text-3xl font-bold font-mono text-primary">
+                {fmt(results.delta, 2)} <span className="text-base font-normal text-muted-foreground">cm</span>
+              </p>
             </div>
-            <div className="rounded-lg border border-border bg-card p-4 text-center">
-              <p className="text-xs text-muted-foreground font-semibold mb-2">COEFF. CARTER</p>
-              <p className="text-2xl font-bold font-mono text-foreground">{fmt(airGap.Kdelta, 3)}</p>
-              <p className="text-xs text-muted-foreground mt-1">sans unité</p>
+            <div className="rounded-lg border border-border p-5 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">Coeff. Carter (Kδ)</p>
+              <p className="text-3xl font-bold font-mono text-primary">{fmt(results.Kdelta, 3)}</p>
             </div>
           </div>
 
-          {/* Results Table */}
+          {/* Tableau des résultats exhaustifs */}
           <ResultTable
-            title="Résultats - Entrefer & Carter"
+            title="Détails de tous les paramètres calculés"
             rows={[
-              {
-                label: 'Entrefer calculé',
-                symbol: 'δ',
-                value: fmt(airGap.delta, 2),
-                unit: 'cm',
-              },
-              {
-                label: 'Entrefer (millimètres)',
-                symbol: 'δ',
-                value: fmt((airGap.delta || 0) * 10, 1),
-                unit: 'mm',
-              },
-              {
-                label: 'Coefficient de Carter',
-                symbol: 'K_δ',
-                value: fmt(airGap.Kdelta, 3),
-                unit: '',
-              },
-              {
-                label: 'Charge linéique',
-                symbol: 'A',
-                value: fmt(dim.A, 0),
-                unit: 'A/cm',
-              },
-              {
-                label: 'Pas polaire',
-                symbol: 'τ',
-                value: fmt(dim.tau, 2),
-                unit: 'cm',
-              },
-              {
-                label: 'Densité flux entrefer',
-                symbol: 'B_δ0',
-                value: fmt(stator.Bd0, 0),
-                unit: 'Gauss',
-              },
+              { label: 'Entrefer calculé (théorique)', symbol: 'δ_calc',      value: fmt(results.delta_calc, 4), unit: 'cm' },
+              { label: 'Entrefer adopté (arrondi)',    symbol: 'δ',           value: fmt(results.delta, 2),      unit: 'cm' },
+              { label: "Ouverture d'encoche",          symbol: 'b_0',         value: fmt(results.b0, 2),         unit: 'cm' },
+              { label: 'Ratio ouverture / entrefer',   symbol: 'b_0/δ',       value: fmt(results.ratio, 3),      unit: '' },
+              { label: 'Coefficient géométrique',      symbol: 'γ',           value: fmt(results.gamma, 4),      unit: '' },
+              { label: 'Coeff. Carter (théorique)',    symbol: 'K_{δ,calc}',  value: fmt(results.Kdelta_calc, 4),unit: '' },
+              { label: 'Coefficient de Carter final',  symbol: 'K_δ',         value: fmt(results.Kdelta, 3),     unit: '' },
             ]}
           />
+
+          {/* Informations sur les constantes de conception */}
+          <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/20 text-sm">
+            <p className="font-bold text-blue-800 dark:text-blue-300 mb-2">Constantes d'entrée utilisées :</p>
+            <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-400 font-mono">
+              <li>x<sub className="font-sans">d</sub>* = {results.xd_star}</li>
+              <li>x<sub className="font-sans">σ</sub>* = {results.xSigma_star}</li>
+              <li>K' = {results.Kprime}</li>
+            </ul>
+          </div>
+
         </div>
 
-        {/* RIGHT COLUMN: Engineering Formulas */}
-        <div className="space-y-6">
-          <Formula label="Entrefer calculé (δ)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>δ = </span>
+        {/* ================================================================ */}
+        {/* COLONNE DROITE : FORMULES D'INGÉNIERIE SÉCURISÉES (HTML INLINE)  */}
+        {/* ================================================================ */}
+        <Card className="shadow-sm border-t-4 border-t-slate-600 bg-slate-50/50 dark:bg-slate-900/50 h-fit">
+          <CardHeader>
+            <CardTitle className="text-xl">Formules Mathématiques</CardTitle>
+            <CardDescription>Équations exhaustives utilisées pour l'Étape 5</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+
+            <Formula label="1. Entrefer Théorique">
+              <span className="italic font-semibold mr-2">{sym.delta}<sub>calc</sub></span>
+              <span className="mr-2">=</span>
               <Frac
-                num={<span>0.36 {sym.dot} A {sym.dot} τ</span>}
-                den={<span>K' {sym.dot} (x_d* - x_σ*) {sym.dot} B_δ0</span>}
+                num={<span>0.36 {sym.dot} A {sym.dot} {sym.tau}</span>}
+                den={<span>K' {sym.dot} (x*<sub>d</sub> - x*<sub>σ</sub>) {sym.dot} B<sub>δ0</sub></span>}
               />
-            </div>
-            <div className="text-xs text-muted-foreground mt-2 text-center">
-              Où: K' = {fmt(1.06, 2)}, x_d* = {fmt(1.35, 2)}, x_σ* = {fmt(0.1, 2)}
-            </div>
-          </Formula>
+            </Formula>
 
-          <Formula label="Rapport d'ouverture d'encoche (b₀/δ)">
-            <div className="flex items-center justify-center gap-1">
-              <span>ratio = </span>
-              <Frac num={<span>b₀</span>} den={<span>δ</span>} />
-              <span>=</span>
-              <Frac num={<span>l_e / 10</span>} den={<span>δ</span>} />
-            </div>
-            <div className="text-xs text-muted-foreground mt-2 text-center">
-              Où: l_e = {fmt(stator.le, 1)} (largeur ouverture)
-            </div>
-          </Formula>
+            <Formula label="2. Entrefer Adopté (Arrondi au 0.05)">
+              <span className="italic font-semibold mr-2">{sym.delta}</span>
+              {sym.approx}
+              <span>{sym.delta}<sub>calc</sub></span>
+            </Formula>
 
-          <Formula label="Coefficient de saturation (γ)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>γ = </span>
-              <Frac num={<span>ratio²</span>} den={<span>5 + ratio</span>} />
-            </div>
-          </Formula>
+            <Formula label="3. Ouverture d'Encoche">
+              <span className="italic font-semibold mr-2">b<sub>0</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>b<sub>e</sub></span>} den="10" />
+            </Formula>
 
-          <Formula label="Coefficient de Carter (K_δ)">
-            <div className="flex items-center justify-center gap-1">
-              <span>K_δ = </span>
+            <Formula label="4. Ratio d'Ouverture d'Encoche">
+              <span className="italic font-semibold mr-2">ratio</span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>b<sub>0</sub></span>} den={sym.delta} />
+            </Formula>
+
+            <Formula label="5. Coefficient Géométrique (γ)">
+              <span className="italic font-semibold mr-2">{sym.gamma}</span>
+              <span className="mr-2">=</span>
               <Frac
-                num={<span>t₁</span>}
-                den={<span>t₁ - γ {sym.dot} δ</span>}
+                num={<span>(ratio)²</span>}
+                den={<span>5 + ratio</span>}
               />
-            </div>
-            <div className="text-xs text-muted-foreground mt-2 text-center">
-              Où: t₁ = {fmt(stator.t1, 2)} cm (pas dentaire)
-            </div>
-          </Formula>
+            </Formula>
 
-          <Formula label="Entrefer apparent (δ_app)">
-            <div className="flex items-center justify-center gap-1">
-              <span>δ_app = δ {sym.dot} K_δ = {fmt((airGap.delta || 0) * (airGap.Kdelta || 1), 3)} cm</span>
-            </div>
-          </Formula>
-        </div>
-      </div>
+            <Formula label="6. Coefficient de Carter Théorique">
+              <span className="italic font-semibold mr-2">K<sub>{sym.delta},calc</sub></span>
+              <span className="mr-2">=</span>
+              <Frac
+                num={<span>t<sub>1</sub></span>}
+                den={<span>t<sub>1</sub> - {sym.gamma} {sym.dot} {sym.delta}</span>}
+              />
+            </Formula>
 
-      {/* Full-width validation section */}
-      <div className="mt-8 rounded-lg border border-border p-6 bg-muted/30">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Vérification des paramètres</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg border border-border bg-card">
-            <p className="text-xs text-muted-foreground font-semibold mb-2">ENTREFER</p>
-            <p className="text-lg font-bold font-mono text-foreground">{fmt(airGap.delta, 2)} cm</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {(airGap.delta || 0) > 0 && (airGap.delta || 0) < 1
-                ? '✓ Valeur nominale correcte'
-                : '⚠ Entrefer anormal'}
-            </p>
-          </div>
+            <Formula label="7. Coefficient de Carter Final (Arrondi)">
+              <span className="italic font-semibold mr-2">K<sub>{sym.delta}</sub></span>
+              {sym.approx}
+              <span>K<sub>{sym.delta},calc</sub></span>
+            </Formula>
 
-          <div className="p-4 rounded-lg border border-border bg-card">
-            <p className="text-xs text-muted-foreground font-semibold mb-2">COEFF. CARTER</p>
-            <p className="text-lg font-bold font-mono text-foreground">{fmt(airGap.Kdelta, 3)}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {(airGap.Kdelta || 0) > 1 && (airGap.Kdelta || 0) < 1.5
-                ? '✓ Norme IEC'
-                : '⚠ Hors limites'}
-            </p>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="p-4 rounded-lg border border-border bg-card">
-            <p className="text-xs text-muted-foreground font-semibold mb-2">CHARGE LINÉIQUE</p>
-            <p className="text-lg font-bold font-mono text-foreground">{fmt(dim.A, 0)} A/cm</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {(dim.A || 0) > 0 && (dim.A || 0) < 1000
-                ? '✓ Plage nominale'
-                : '⚠ À vérifier'}
-            </p>
-          </div>
-        </div>
       </div>
     </StepLayout>
   );

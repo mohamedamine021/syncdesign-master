@@ -7,29 +7,32 @@ const __dirname = path.dirname(__filename)
 
 // On assigne les variables
 process.env.DIST = path.join(__dirname, '../dist')
-// On utilise `process.env.DIST!` pour affirmer à TypeScript que la variable n'est pas undefined
 process.env.VITE_PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST!, '../public')
 
 let win: BrowserWindow | null
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 
 function createWindow() {
+  const iconPath = path.join(process.env.VITE_PUBLIC!, 'logo.ico');
+  console.log("Tentative de chargement de l'icône depuis :", iconPath);
+
   win = new BrowserWindow({
     width: 1200,
     height: 800,
-    // On ajoute `!` pour garantir que VITE_PUBLIC est une string
-    icon: path.join(process.env.VITE_PUBLIC!, 'favicon.ico'),
+    icon: iconPath,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: false,
-      contextIsolation: true,
+      // 1️⃣ LIGNE PRELOAD SUPPRIMÉE ICI
+      // 2️⃣ ON AUTORISE L'INTÉGRATION NODE DIRECTEMENT
+      nodeIntegration: true,
+      contextIsolation: false,
     },
   })
+
+  win.setMenuBarVisibility(false)
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    // On ajoute `!` pour garantir que DIST est une string
     win.loadFile(path.join(process.env.DIST!, 'index.html'))
   }
 }

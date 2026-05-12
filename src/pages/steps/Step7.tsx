@@ -1,17 +1,20 @@
-'use client';
-
-import { useMemo, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
-// ============ CUSTOM HTML MATH COMPONENTS (NO KATEX) ============
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANTS HTML POUR RENDU MATHÉMATIQUE SÉCURISÉ (ZÉRO LATEX)
+// ─────────────────────────────────────────────────────────────────────────────
 function Formula({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border shadow-sm">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{label}</p>
-      <div className="flex justify-center items-center py-1 overflow-x-auto text-slate-800 dark:text-slate-200">{children}</div>
+    <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm mb-4">
+      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">{label}</p>
+      <div className="flex justify-center items-center py-2 overflow-x-auto text-slate-800 dark:text-slate-200 text-sm font-serif">
+        {children}
+      </div>
     </div>
   );
 }
@@ -19,320 +22,290 @@ function Formula({ label, children }: { label: string; children: React.ReactNode
 function Frac({ num, den }: { num: React.ReactNode; den: React.ReactNode }) {
   return (
     <span className="inline-flex flex-col items-center mx-1 align-middle">
-      <span className="border-b border-current px-1 leading-tight">{num}</span>
-      <span className="px-1 leading-tight">{den}</span>
+      <span className="border-b border-current px-1 leading-tight text-sm pb-0.5">{num}</span>
+      <span className="px-1 leading-tight text-sm pt-0.5">{den}</span>
     </span>
   );
 }
 
 const sym = {
   dot: <span className="mx-0.5">·</span>,
-  sqrt3: (
-    <span className="inline-flex items-center mx-1">
-      <span className="text-lg mr-0.5">√</span>
-      <span className="border-t border-current px-1">3</span>
-    </span>
-  ),
-  cos: <span className="mr-1">cos(φ)</span>,
+  delta: <span className="mx-0.5 italic">δ</span>,
+  sigma: <span className="mx-0.5 italic">σ</span>,
+  gamma: <span className="mx-0.5 italic">γ</span>,
+  phi: <span className="mx-0.5 italic">Φ</span>,
+  xi: <span className="mx-0.5 italic">ξ</span>,
   pi: <span className="mx-0.5">π</span>,
-  delta: <span className="mx-0.5">δ</span>,
-  sigma: <span className="mx-0.5">σ</span>,
-  phi: <span className="mx-0.5">Φ</span>,
 };
 
-// ============ STEP 7: NO-LOAD CHARACTERISTIC ============
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANT PRINCIPAL : STEP 7
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Step7() {
-  const { inputs, nominal, mainDimensions: dim, stator, airGap, setCurrentStep } = useMachineStore();
+  const { mainDimensions, stator, airGap, setCurrentStep } = useMachineStore();
 
-  // Update step on mount
+  // 1. Sécurité anti-boucle infinie
   useEffect(() => {
     if (typeof setCurrentStep === 'function') {
       setCurrentStep(7);
     }
   }, [setCurrentStep]);
 
-  // ============ USEMEMO: CALCULATE OR RETRIEVE ============
-  const noLoadData = useMemo(() => {
-    // Verify all required inputs exist
-    if (!dim || !stator || !airGap || !inputs || !nominal) {
+  // 2. Délégation au moteur
+  const results = useMemo(() => {
+    if (!mainDimensions || !stator || !airGap) {
       return null;
     }
-
     try {
-      // Call CalculationEngine.calcNoLoadCharacteristic with EXACT signature
-      const result = CalculationEngine.calcNoLoadCharacteristic(
-        dim,
-        stator,
-        airGap,
-        1.52,    // boe_cm (default)
-        99,      // Da (default)
-        0.68     // alpha_delta (default)
-      );
-      return result;
+      // Bilan nominal (Loi de Hopkinson)
+      const nominalData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
+      // Points de la caractéristique à vide
+      const curvePoints = CalculationEngine.generateNoLoadCurve(mainDimensions, stator, airGap);
+      return { nominalData, curvePoints };
     } catch (error) {
-      console.error('[v0] Error calculating no-load characteristic:', error);
+      console.error("Erreur lors du calcul de la caractéristique à vide :", error);
       return null;
     }
-  }, [dim, stator, airGap, inputs, nominal]);
+  }, [mainDimensions, stator, airGap]);
 
-  // ============ ERROR HANDLING ============
-  if (!dim || !stator || !airGap) {
-    return (
-      <StepLayout
-        stepNumber={7}
-        title="Caractéristique à vide"
-        description="Calcul des FMM du circuit magnétique"
-      >
-        <p className="text-destructive">
-          Données manquantes. Veuillez compléter les étapes précédentes.
-        </p>
-      </StepLayout>
-    );
-  }
-
-  if (!noLoadData) {
-    return (
-      <StepLayout
-        stepNumber={7}
-        title="Caractéristique à vide"
-        description="Calcul des FMM du circuit magnétique"
-      >
-        <p className="text-destructive">
-          Calcul impossible. Vérifiez les paramètres d'entrée.
-        </p>
-      </StepLayout>
-    );
-  }
-
-  // ============ FORMATTING FUNCTION ============
+  // Formatage des valeurs — protège aussi les divisions par 1e6
   const fmt = (v: number | null | undefined, d = 2): string => {
-    if (v === null || v === undefined || !Number.isFinite(v)) return '—';
-    return v.toFixed(d);
+    if (v === null || v === undefined || isNaN(v as number) || !isFinite(v as number)) return '—';
+    return (v as number).toFixed(d);
   };
 
-  // ============ RENDER ============
+  // Helper sécurisé pour les divisions avant formatage
+  const fmtDiv = (v: number | null | undefined, divisor: number, d = 2): string =>
+    fmt((v != null && isFinite(v as number)) ? (v as number) / divisor : undefined, d);
+
+  // 3. Bouclier d'erreur si données manquantes
+  if (!results) {
+    return (
+      <StepLayout stepNumber={7} title="Step 7 : Caractéristique à vide">
+        <div className="p-6 rounded-lg border border-destructive/30 bg-destructive/10">
+          <p className="text-destructive font-bold">Erreur : Paramètres manquants pour le circuit magnétique.</p>
+          <p className="text-destructive/80 text-sm mt-2">
+            Veuillez vous assurer que les dimensions (Step 3), le stator (Step 4) et l'entrefer (Step 5) sont calculés.
+          </p>
+        </div>
+      </StepLayout>
+    );
+  }
+
+  const { nominalData, curvePoints } = results;
+
+  // Validation de saturation — valeur par défaut 0 pour éviter un crash si clé absente
+  const Bd13Safe = nominalData?.Bd13 ?? 0;
+  const isSaturated = Bd13Safe > 18000;
+
+  // 4. Rendu de la page
   return (
     <StepLayout
       stepNumber={7}
-      title="Caractéristique à vide"
-      description="Calcul des FMM du circuit magnétique et de la courbe magnétisante"
+      title="Step 7 : Caractéristique à vide"
+      description="Bilan des forces magnétomotrices (FMM) et tracé de la courbe de saturation"
     >
-      {/* 2-COLUMN GRID LAYOUT */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        
-        {/* ========== LEFT COLUMN: SUMMARY CARDS + TABLE ========== */}
-        <div className="space-y-4">
-          {/* Summary Cards */}
-          <div className="rounded-lg border border-border p-5 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Paramètres magnétiques</h3>
 
-            <div className="p-3 rounded-md bg-card border border-border">
-              <p className="text-xs text-muted-foreground">Entrefer - K_delta</p>
-              <p className="text-lg font-mono text-foreground font-bold">{fmt(noLoadData.Kdelta, 3)}</p>
+        {/* ================================================================ */}
+        {/* COLONNE GAUCHE : CARTES RÉSUMÉ ET TABLEAUX                       */}
+        {/* ================================================================ */}
+        <div className="space-y-6">
+
+          {/* Cartes KPI */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">FMM Totale (F₀)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(nominalData?.F_0, 0)} <span className="text-sm font-normal text-muted-foreground">A</span></p>
             </div>
-
-            <div className="p-3 rounded-md bg-card border border-border">
-              <p className="text-xs text-muted-foreground">FMM entrefer</p>
-              <p className="text-lg font-mono text-foreground font-bold">{fmt(noLoadData.F_delta, 0)} A</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">FMM Entrefer (Fδ)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(nominalData?.F_delta, 0)} <span className="text-sm font-normal text-muted-foreground">A</span></p>
             </div>
-
-            <div className="p-3 rounded-md bg-card border border-border">
-              <p className="text-xs text-muted-foreground">Induction dent</p>
-              <p className="text-lg font-mono text-foreground font-bold">{fmt(noLoadData.Bd13, 0)} G</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Induction Dent (Bd13)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(nominalData?.Bd13, 0)} <span className="text-sm font-normal text-muted-foreground">G</span></p>
             </div>
-
-            <div className="p-3 rounded-md bg-card border border-border">
-              <p className="text-xs text-muted-foreground">Induction culasse</p>
-              <p className="text-lg font-mono text-foreground font-bold">{fmt(noLoadData.Bc, 0)} G</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Induction Culasse (Bc)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(nominalData?.Bc, 0)} <span className="text-sm font-normal text-muted-foreground">G</span></p>
             </div>
           </div>
 
-          {/* Results Table */}
+          {/* Validation de saturation */}
+          <div className={`p-4 rounded-lg border-2 shadow-sm ${
+            !isSaturated
+              ? 'border-green-500/50 bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300'
+              : 'border-destructive/50 bg-destructive/10 text-destructive'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">{!isSaturated ? '✅' : '⚠️'}</span>
+              <h4 className="font-bold text-sm uppercase tracking-wide">Saturation des dents statoriques</h4>
+            </div>
+            <p className="text-xs font-medium opacity-90 ml-8">
+              {!isSaturated
+                ? `L'induction dans les dents (${fmt(Bd13Safe, 0)} G) est dans les limites (< 18000 G).`
+                : `Attention : Forte saturation détectée (${fmt(Bd13Safe, 0)} G > 18000 G). Le calcul du coefficient K_ex (Fig 2.11) sera appliqué.`}
+            </p>
+          </div>
+
+          {/* Tableau détaillé des FMM */}
           <ResultTable
-            title="Détail des FMM du circuit magnétique"
+            title="Bilan des Forces Magnétomotrices (Loi de Hopkinson)"
             rows={[
-              { label: 'Entrefer', symbol: 'Kdelta', value: fmt(noLoadData.Kdelta, 3) },
-              { label: 'FMM entrefer', symbol: 'F_δ', value: fmt(noLoadData.F_delta, 0), unit: 'A' },
-              { label: 'FMM dents stator', symbol: 'F_d1', value: fmt(noLoadData.F_d1, 0), unit: 'A' },
-              { label: 'FMM culasse stator', symbol: 'F_c', value: fmt(noLoadData.F_c, 0), unit: 'A' },
-              { label: 'FMM culasse rotor', symbol: 'F_a', value: fmt(noLoadData.F_a, 0), unit: 'A' },
-              { label: 'FMM zone pôle', symbol: 'F_M0', value: fmt(noLoadData.F_M0, 0), unit: 'A' },
-              { label: 'FMM jonction', symbol: 'F_δM', value: fmt(noLoadData.F_delta_M, 0), unit: 'A' },
-              { label: 'FMM TOTALE', symbol: 'F₀', value: fmt(noLoadData.F_0, 0), unit: 'A' },
-              { label: 'Flux magnétique', symbol: 'Φ_M', value: `${fmt(noLoadData.Phi_M / 1e6, 3)} × 10⁶`, unit: 'Mx' },
+              { label: "FMM de l'entrefer",            symbol: 'F_δ',    value: fmt(nominalData?.F_delta, 0),   unit: 'A' },
+              { label: 'FMM des dents stator',         symbol: 'F_{d1}', value: fmt(nominalData?.F_d1, 0),      unit: 'A' },
+              { label: 'FMM de la culasse stator',     symbol: 'F_c',    value: fmt(nominalData?.F_c, 0),       unit: 'A' },
+              { label: 'FMM de la zone polaire',       symbol: 'F_{M0}', value: fmt(nominalData?.F_M0, 0),      unit: 'A' },
+              { label: 'FMM de la culasse rotor',      symbol: 'F_a',    value: fmt(nominalData?.F_a, 0),       unit: 'A' },
+              { label: 'FMM de la jonction pôle-rotor',symbol: 'F_{δM}', value: fmt(nominalData?.F_delta_M, 0), unit: 'A' },
+              { label: 'FMM TOTALE À VIDE',            symbol: 'F_0',    value: fmt(nominalData?.F_0, 0),       unit: 'A' },
             ]}
           />
+
+          {/* Tableau des inductions et champs H */}
+          <ResultTable
+            title="Grandeurs Magnétiques (B et H)"
+            rows={[
+              { label: 'Induction dans la dent (1/3)', symbol: 'B_{d13}', value: fmt(nominalData?.Bd13, 0),  unit: 'G' },
+              { label: 'Champ magn. dans la dent',     symbol: 'H_{d13}', value: fmt(nominalData?.Hd13, 1),  unit: 'A/cm' },
+              { label: 'Induction culasse stator',     symbol: 'B_c',     value: fmt(nominalData?.Bc, 0),    unit: 'G' },
+              { label: 'Champ magn. culasse stator',   symbol: 'H_c',     value: fmt(nominalData?.Hc, 1),    unit: 'A/cm' },
+              { label: 'Induction noyau polaire',      symbol: 'B_M',     value: fmt(nominalData?.B_M, 0),   unit: 'G' },
+              { label: 'Champ magn. noyau polaire',    symbol: 'H_M',     value: fmt(nominalData?.H_M, 1),   unit: 'A/cm' },
+              { label: 'Induction culasse rotor',      symbol: 'B_a',     value: fmt(nominalData?.B_a, 0),   unit: 'G' },
+              { label: 'Champ magn. culasse rotor',    symbol: 'H_a',     value: fmt(nominalData?.H_a, 1),   unit: 'A/cm' },
+            ]}
+          />
+
+          {/* Tableau des géométries et flux */}
+          <ResultTable
+            title="Géométries et Flux de fuite"
+            rows={[
+              { label: 'Pas dentaire au tiers',        symbol: 't_{d13}', value: fmt(nominalData?.t_d13, 2),                          unit: 'cm' },
+              { label: 'Largeur dent au tiers',        symbol: 'b_{d13}', value: fmt(nominalData?.b_d13, 2),                          unit: 'cm' },
+              { label: 'Longueur culasse stator',      symbol: 'l_c',     value: fmt(nominalData?.lc, 2),                             unit: 'cm' },
+              { label: 'Coefficient interpolation',    symbol: 'ξ',       value: fmt(nominalData?.xi, 3),                             unit: '' },
+              { label: 'Flux de dispersion polaire',   symbol: 'Φ_σ',     value: `${fmtDiv(nominalData?.Phi_sigma, 1e6, 2)} × 10⁶`,   unit: 'Mx' },
+              { label: 'Flux total du pôle',           symbol: 'Φ_M',     value: `${fmtDiv(nominalData?.Phi_M, 1e6, 2)} × 10⁶`,       unit: 'Mx' },
+            ]}
+          />
+
         </div>
 
-        {/* ========== RIGHT COLUMN: ENGINEERING FORMULAS ========== */}
-        <div className="space-y-4">
-          <Formula label="a) Coefficient de Carter (K_delta)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>K_delta</span>
-              <span>=</span>
-              <Frac
-                num={
-                  <div className="flex items-center gap-1">
-                    <span>t</span>
-                    <sub>1</sub>
+        {/* ================================================================ */}
+        {/* COLONNE DROITE : FORMULES & POINTS DE COURBE                     */}
+        {/* ================================================================ */}
+        <div className="space-y-6 h-fit">
+          <Card className="shadow-sm border-t-4 border-t-slate-600 bg-slate-50/50 dark:bg-slate-900/50">
+            <CardHeader>
+              <CardTitle className="text-xl">Formules Analytiques</CardTitle>
+              <CardDescription>Bilan des FMM (Loi de Hopkinson)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+
+              <Formula label="1. FMM de l'Entrefer">
+                <span className="italic font-semibold mr-2">F<sub>{sym.delta}</sub></span>
+                <span className="mr-2">=</span>
+                <span>1.6 {sym.dot} {sym.delta} {sym.dot} K<sub>{sym.delta}</sub> {sym.dot} B<sub>{sym.delta}0</sub></span>
+              </Formula>
+
+              <Formula label="2. Géométrie de la Dent (1/3 de la hauteur)">
+                <div className="flex flex-col gap-2 w-full text-center">
+                  <div>
+                    <span className="italic font-semibold mr-2">t<sub>d13</sub></span>
+                    <span className="mr-2">=</span>
+                    <Frac num={<span>{sym.pi} {sym.dot} (D + 2/3 {sym.dot} h<sub>e</sub>)</span>} den={<span>Z<sub>1</sub></span>} />
                   </div>
-                }
-                den={
-                  <div className="flex items-center gap-0.5">
-                    <span>t</span>
-                    <sub>1</sub>
-                    <span>−</span>
-                    <span>γ</span>
-                    {sym.dot}
-                    <span>δ</span>
+                  <div>
+                    <span className="italic font-semibold mr-2">b<sub>d13</sub></span>
+                    <span className="mr-2">=</span>
+                    <span>t<sub>d13</sub> - b<sub>e</sub></span>
                   </div>
-                }
-              />
-            </div>
-          </Formula>
+                </div>
+              </Formula>
 
-          <Formula label="b) FMM entrefer (F_delta)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>F</span>
-              <sub>δ</sub>
-              <span>=</span>
-              <span>1.6 · δ · K</span>
-              <sub>delta</sub>
-              <span>· B</span>
-              <sub>d0</sub>
-            </div>
-          </Formula>
+              <Formula label="3. FMM des Dents Statoriques">
+                <span className="italic font-semibold mr-2">F<sub>d1</sub></span>
+                <span className="mr-2">=</span>
+                <span>2 {sym.dot} h<sub>e</sub> {sym.dot} H<sub>d13</sub></span>
+              </Formula>
 
-          <Formula label="c) FMM dents statoriques (F_d1)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>F</span>
-              <sub>d1</sub>
-              <span>=</span>
-              <span>2 · h</span>
-              <sub>e</sub>
-              <span>· H</span>
-              <sub>d13</sub>
-            </div>
-          </Formula>
+              <Formula label="4. FMM de la Culasse Statorique">
+                <span className="italic font-semibold mr-2">F<sub>c</sub></span>
+                <span className="mr-2">=</span>
+                <span>l<sub>c</sub> {sym.dot} {sym.xi} {sym.dot} H<sub>c</sub></span>
+              </Formula>
 
-          <Formula label="d) FMM culasse statorique (F_c)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>F</span>
-              <sub>c</sub>
-              <span>=</span>
-              <span>l</span>
-              <sub>c</sub>
-              <span>· ξ(B</span>
-              <sub>c</sub>
-              <span>) · H</span>
-              <sub>c</sub>
-            </div>
-          </Formula>
+              <Formula label="5. Flux Total du Pôle">
+                <span className="italic font-semibold mr-2">{sym.phi}<sub>M</sub></span>
+                <span className="mr-2">=</span>
+                <span>{sym.phi}<sub>ch</sub> + {sym.phi}<sub>{sym.sigma}</sub></span>
+              </Formula>
 
-          <Formula label="e) FMM zone pôle (F_M0)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>F</span>
-              <sub>M0</sub>
-              <span>=</span>
-              <span>2(h</span>
-              <sub>m</sub>
-              <span>+ h</span>
-              <sub>p</sub>
-              <span>) · H</span>
-              <sub>M</sub>
-            </div>
-          </Formula>
+              <Formula label="6. FMM de la Zone Polaire">
+                <span className="italic font-semibold mr-2">F<sub>M0</sub></span>
+                <span className="mr-2">=</span>
+                <span>2(h<sub>m</sub> + h<sub>p</sub>) {sym.dot} H<sub>M</sub></span>
+              </Formula>
 
-          <Formula label="f) FMM culasse rotor (F_a)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>F</span>
-              <sub>a</sub>
-              <span>=</span>
-              <span>l</span>
-              <sub>a</sub>
-              <span>· H</span>
-              <sub>a</sub>
-            </div>
-          </Formula>
+              <Formula label="7. FMM de la Culasse Rotorique">
+                <span className="italic font-semibold mr-2">F<sub>a</sub></span>
+                <span className="mr-2">=</span>
+                <span>l<sub>a,path</sub> {sym.dot} H<sub>a</sub></span>
+              </Formula>
 
-          <Formula label="g) FMM jonction pôle-culasse (F_deltaM)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>F</span>
-              <sub>δM</sub>
-              <span>=</span>
-              <span>1.6 · δ</span>
-              <sub>jonc</sub>
-              <span>· B</span>
-              <sub>M</sub>
-            </div>
-          </Formula>
+              <Formula label="8. FMM Jonction Pôle-Rotor">
+                <span className="italic font-semibold mr-2">F<sub>{sym.delta}M</sub></span>
+                <span className="mr-2">=</span>
+                <span>1.6 {sym.dot} {sym.delta}<sub>jonc</sub> {sym.dot} B<sub>M</sub></span>
+              </Formula>
 
-          <Formula label="h) FMM TOTALE du circuit magnétique (F_0)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>F</span>
-              <sub>0</sub>
-              <span>=</span>
-              <span>F</span>
-              <sub>δ</sub>
-              <span>+ F</span>
-              <sub>d1</sub>
-              <span>+ F</span>
-              <sub>c</sub>
-              <span>+ F</span>
-              <sub>a</sub>
-              <span>+ F</span>
-              <sub>M0</sub>
-              <span>+ F</span>
-              <sub>δM</sub>
-            </div>
-          </Formula>
+              <div className="bg-blue-50 dark:bg-blue-950/30 p-5 rounded-lg border-2 border-blue-300 dark:border-blue-800 shadow-sm mt-6">
+                <p className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-widest mb-3">
+                  Théorème d'Ampère (FMM Totale)
+                </p>
+                <div className="flex justify-center items-center text-lg font-semibold text-blue-900 dark:text-blue-200">
+                  <span>F<sub>0</sub></span>
+                  <span className="mx-2">=</span>
+                  <span>F<sub>{sym.delta}</sub> + F<sub>d1</sub> + F<sub>c</sub> + F<sub>M0</sub> + F<sub>a</sub> + F<sub>{sym.delta}M</sub></span>
+                </div>
+              </div>
 
-          <Formula label="i) Flux magnétique total (Phi_M)">
-            <div className="flex items-center justify-center gap-1 flex-wrap">
-              <span>Φ</span>
-              <sub>M</sub>
-              <span>=</span>
-              <span>Φ</span>
-              <sub>ch</sub>
-              <span>+</span>
-              <span>Φ</span>
-              <sub>σ</sub>
-              <span>=</span>
-              <span>Φ</span>
-              <sub>ch</sub>
-              <span>+ 2(λ</span>
-              <sub>p</sub>
-              <span>+ λ</span>
-              <sub>m</sub>
-              <span>) · F</span>
-              <sub>sum</sub>
-            </div>
-          </Formula>
+            </CardContent>
+          </Card>
+
+          {/* Points de la caractéristique à vide */}
+          <Card className="shadow-sm border-border bg-card">
+            <CardHeader className="pb-3 border-b border-border/50">
+              <CardTitle className="text-sm font-bold text-foreground">Points Caractéristique à Vide (Fig 2.12)</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted/50 text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">E₀ / U<sub>n</sub></th>
+                    <th className="px-4 py-2 font-medium">B<sub>δ</sub> (G)</th>
+                    <th className="px-4 py-2 font-medium">K<sub>ex</sub></th>
+                    <th className="px-4 py-2 font-medium">ΣF (A)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {curvePoints.map((pt, i) => (
+                    <tr key={i} className="hover:bg-muted/30">
+                      <td className="px-4 py-2 font-mono">{fmt(pt?.ratio_E0, 2)}</td>
+                      <td className="px-4 py-2 font-mono">{fmt(pt?.B_delta_Gauss, 0)}</td>
+                      <td className="px-4 py-2 font-mono text-muted-foreground">{fmt(pt?.K_ex, 2)}</td>
+                      <td className="px-4 py-2 font-mono font-bold text-primary">{fmt(pt?.F_total_A, 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+
         </div>
-      </div>
 
-      {/* VALIDATION SECTION BELOW */}
-      <div className="mt-8 rounded-lg border border-border p-5 bg-muted/30">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Vérification magnétique</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className={`p-4 rounded-md border ${noLoadData.Bd13 < 18000 ? 'border-success/50 bg-success/10' : 'border-warning/50 bg-warning/10'}`}>
-            <p className="text-xs text-muted-foreground mb-1">Induction dent</p>
-            <p className="text-lg font-mono font-bold">{fmt(noLoadData.Bd13, 0)} G</p>
-            <p className="text-xs mt-1">{noLoadData.Bd13 < 18000 ? '✓ OK' : '⚠ Saturation'}</p>
-          </div>
-          
-          <div className={`p-4 rounded-md border ${noLoadData.Bc < 15000 ? 'border-success/50 bg-success/10' : 'border-warning/50 bg-warning/10'}`}>
-            <p className="text-xs text-muted-foreground mb-1">Induction culasse</p>
-            <p className="text-lg font-mono font-bold">{fmt(noLoadData.Bc, 0)} G</p>
-            <p className="text-xs mt-1">{noLoadData.Bc < 15000 ? '✓ OK' : '⚠ Saturation'}</p>
-          </div>
-
-          <div className="p-4 rounded-md border border-info/50 bg-info/10">
-            <p className="text-xs text-muted-foreground mb-1">FMM totale</p>
-            <p className="text-lg font-mono font-bold">{fmt(noLoadData.F_0, 0)} A</p>
-            <p className="text-xs mt-1 text-info">Circuit magnétique complet</p>
-          </div>
-        </div>
       </div>
     </StepLayout>
   );

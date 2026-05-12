@@ -1,15 +1,20 @@
-import { useMemo, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
-// HTML-based formula rendering components (NO KaTeX/LaTeX)
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANTS HTML POUR RENDU MATHÉMATIQUE SÉCURISÉ (ZÉRO LATEX)
+// ─────────────────────────────────────────────────────────────────────────────
 function Formula({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-card dark:bg-slate-950 p-4 rounded-lg border border-border shadow-sm">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{label}</p>
-      <div className="flex justify-center items-center py-1 overflow-x-auto text-foreground">{children}</div>
+    <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm mb-4">
+      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">{label}</p>
+      <div className="flex justify-center items-center py-2 overflow-x-auto text-slate-800 dark:text-slate-200 text-sm font-serif">
+        {children}
+      </div>
     </div>
   );
 }
@@ -17,218 +22,280 @@ function Formula({ label, children }: { label: string; children: React.ReactNode
 function Frac({ num, den }: { num: React.ReactNode; den: React.ReactNode }) {
   return (
     <span className="inline-flex flex-col items-center mx-1 align-middle">
-      <span className="border-b border-current px-1 leading-tight text-sm">{num}</span>
-      <span className="px-1 leading-tight text-sm">{den}</span>
+      <span className="border-b border-current px-1 leading-tight text-sm pb-0.5">{num}</span>
+      <span className="px-1 leading-tight text-sm pt-0.5">{den}</span>
     </span>
   );
 }
 
 const sym = {
   dot: <span className="mx-0.5">·</span>,
-  sqrt: (content: string) => (
+  delta: <span className="mx-0.5 italic">δ</span>,
+  tau: <span className="mx-0.5 italic">τ</span>,
+  alpha: <span className="mx-0.5 italic">α</span>,
+  sigma: <span className="mx-0.5 italic">σ</span>,
+  phi: <span className="mx-0.5 italic">Φ</span>,
+  approx: <span className="mx-1">≈</span>,
+  sqrt: (content: React.ReactNode) => (
     <span className="inline-flex items-center mx-1">
       <span className="text-lg mr-0.5">√</span>
-      <span className="border-t border-current px-0.5">{content}</span>
+      <span className="border-t border-current px-1">{content}</span>
     </span>
   ),
-  alpha: <span>α</span>,
-  sigma: <span>σ</span>,
-  tau: <span>τ</span>,
-  phi: <span>Φ</span>,
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANT PRINCIPAL : STEP 6
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Step6() {
-  const { inputs, nominal, mainDimensions: dim, stator, airGap, setCurrentStep } = useMachineStore();
+  const { mainDimensions, stator, airGap, setCurrentStep } = useMachineStore();
 
-  // useMemo: Check if rotor exists; if not, calculate it
-  const calculatedRotor = useMemo(() => {
-    if (!dim || !stator || !airGap) return null;
-    
-    try {
-      return CalculationEngine.calcRotor(dim, stator, airGap);
-    } catch (error) {
-      console.error('[v0] Error calculating rotor:', error);
-      return null;
-    }
-  }, [dim, stator, airGap]);
-
-  // Update step on mount
+  // 1. Sécurité anti-boucle infinie pour l'étape
   useEffect(() => {
     if (typeof setCurrentStep === 'function') {
       setCurrentStep(6);
     }
   }, [setCurrentStep]);
 
-  // Error handling: Check required inputs
-  if (!inputs?.Pn || !nominal || !dim || !stator || !airGap) {
-    return (
-      <StepLayout stepNumber={6} title="Rotor & Pôles" description="Dimensionnement des pôles et de la culasse rotorique">
-        <p className="text-destructive font-semibold">Données manquantes. Veuillez compléter les étapes précédentes.</p>
-      </StepLayout>
-    );
-  }
+  // 2. Délégation au moteur + variables d'affichage pédagogiques
+  const results = useMemo(() => {
+    if (
+      !mainDimensions || !mainDimensions.tau || !mainDimensions.D ||
+      !mainDimensions.l1 || !mainDimensions.alphap ||
+      !stator || !stator.PhiCh ||
+      !airGap || !airGap.delta
+    ) {
+      return null;
+    }
 
-  if (!calculatedRotor) {
-    return (
-      <StepLayout stepNumber={6} title="Rotor & Pôles" description="Dimensionnement des pôles et de la culasse rotorique">
-        <p className="text-destructive font-semibold">Calcul impossible. Erreur lors du dimensionnement du rotor.</p>
-      </StepLayout>
-    );
-  }
+    try {
+      // ── Résultats finaux via le moteur (source de vérité) ──
+      const rotor = CalculationEngine.calcRotor(mainDimensions, stator, airGap);
 
+      // ── Variables intermédiaires pédagogiques (affichage tableau) ──
+      // Constantes identiques aux défauts du moteur
+      const BM_target = 15600;
+      const dnoy      = 20;
+
+      const deltaM   = 1.5 * airGap.delta;
+      const lM       = mainDimensions.l1;
+      const SM       = rotor.PhiM / BM_target;
+      const hM_calc  = 10.5 * airGap.delta + 8;
+      const la       = lM + 11.5;
+
+      return {
+        // Résultats finaux du moteur
+        ...rotor,
+        // Variables intermédiaires pour le tableau détaillé
+        deltaM,
+        lM,
+        SM,
+        hM_calc,
+        dnoy,
+        la,
+      };
+
+    } catch (error) {
+      console.error("Erreur lors du calcul du rotor :", error);
+      return null;
+    }
+  }, [mainDimensions, stator, airGap]);
+
+  // Formatage des valeurs
   const fmt = (v: number | null | undefined, d = 2): string => {
-    if (v === null || v === undefined || !Number.isFinite(v)) return '—';
-    return v.toFixed(d);
+    if (v === null || v === undefined || isNaN(v as number)) return '—';
+    return (v as number).toFixed(d);
   };
 
+  // 3. Bouclier d'erreur si données manquantes
+  if (!results) {
+    return (
+      <StepLayout stepNumber={6} title="Step 6 : Rotor">
+        <div className="p-6 rounded-lg border border-destructive/30 bg-destructive/10">
+          <p className="text-destructive font-bold">Erreur : Paramètres manquants pour le dimensionnement du rotor.</p>
+          <p className="text-destructive/80 text-sm mt-2">
+            Veuillez vous assurer que les étapes précédentes (Dimensions, Stator et Entrefer) ont bien été complétées.
+          </p>
+        </div>
+      </StepLayout>
+    );
+  }
+
+  // 4. Rendu de la page
   return (
-    <StepLayout 
-      stepNumber={6} 
-      title="Rotor & Pôles" 
-      description="Dimensionnement des pôles et de la culasse rotorique"
+    <StepLayout
+      stepNumber={6}
+      title="Step 6 : Rotor"
+      description="Dimensionnement complet des pôles magnétiques, du noyau et de la culasse du rotor"
     >
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        
-        {/* LEFT COLUMN: Summary Cards & Results Table */}
+
+        {/* ================================================================ */}
+        {/* COLONNE GAUCHE : CARTES RÉSUMÉ ET TABLEAUX                       */}
+        {/* ================================================================ */}
         <div className="space-y-6">
-          {/* Summary cards */}
+
+          {/* Cartes KPI (Key Performance Indicators) */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Arc polaire</p>
-              <p className="text-2xl font-mono font-bold text-foreground">{fmt(calculatedRotor.bp, 1)}</p>
-              <p className="text-xs text-muted-foreground">cm</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Arc Polaire (bp)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(results.bp, 2)} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
             </div>
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Rayon épanoui</p>
-              <p className="text-2xl font-mono font-bold text-foreground">{fmt(calculatedRotor.Rp, 1)}</p>
-              <p className="text-xs text-muted-foreground">cm</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Hauteur Noyau (hM)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(results.hM, 2)} <span className="text-sm font-normal text-muted-foreground">cm</span></p>
             </div>
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Hauteur épanoui</p>
-              <p className="text-2xl font-mono font-bold text-foreground">{fmt(calculatedRotor.hp, 1)}</p>
-              <p className="text-xs text-muted-foreground">cm</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Flux Polaire (ΦM)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(results.PhiM / 1e6, 2)} <span className="text-sm font-normal text-muted-foreground">×10⁶ Mx</span></p>
             </div>
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Coeff. dispersion</p>
-              <p className="text-2xl font-mono font-bold text-foreground">{fmt(calculatedRotor.sigmaN, 3)}</p>
-              <p className="text-xs text-muted-foreground">p.u.</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Induction Culasse (Ba)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(results.Ba, 0)} <span className="text-sm font-normal text-muted-foreground">G</span></p>
             </div>
           </div>
 
-          {/* Results Table */}
-          <div className="rounded-lg border border-border bg-muted/30 p-5">
-            <ResultTable 
-              title="Résumé - Rotor & Pôles"
-              rows={[
-                { label: 'Arc polaire', symbol: 'bp', value: fmt(calculatedRotor.bp, 1), unit: 'cm' },
-                { label: 'Rayon épanouissement', symbol: 'Rp', value: fmt(calculatedRotor.Rp, 1), unit: 'cm' },
-                { label: 'Hauteur épanouissement', symbol: 'hp', value: fmt(calculatedRotor.hp, 1), unit: 'cm' },
-                { label: 'Coefficient dispersion', symbol: 'σn', value: fmt(calculatedRotor.sigmaN, 3), unit: 'p.u.' },
-                { label: 'Flux dans le pôle', symbol: 'ΦM', value: `${fmt(calculatedRotor.PhiM / 1e6, 2)} × 10⁶`, unit: 'Mx' },
-                { label: 'Largeur noyau polaire', symbol: 'bM', value: fmt(calculatedRotor.bM, 1), unit: 'cm' },
-                { label: 'Hauteur noyau polaire', symbol: 'hM', value: fmt(calculatedRotor.hM, 1), unit: 'cm' },
-                { label: 'Hauteur culasse rotor', symbol: 'Ha', value: fmt(calculatedRotor.Ha, 1), unit: 'cm' },
-                { label: 'Induction culasse rotor', symbol: 'Ba', value: fmt(calculatedRotor.Ba, 0), unit: 'Gauss' },
-              ]}
-            />
+          {/* Bannière de validation d'induction */}
+          <div className={`p-4 rounded-lg border-2 shadow-sm ${
+            results.Ba <= 16000
+              ? 'border-green-500/50 bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-300'
+              : 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">{results.Ba <= 16000 ? '✅' : '⚠️'}</span>
+              <h4 className="font-bold text-sm uppercase tracking-wide">
+                Induction Rotor (B<sub>a</sub>)
+              </h4>
+            </div>
+            <p className="text-xs font-medium opacity-90 ml-8">
+              {results.Ba <= 16000
+                ? "L'induction dans la culasse rotorique est optimale (≤ 16000 Gauss)."
+                : "Attention : L'induction est un peu élevée, risque de saturation magnétique."}
+            </p>
           </div>
+
+          {/* Tableau des résultats exhaustifs */}
+          <ResultTable
+            title="Détails du Dimensionnement Rotorique"
+            rows={[
+              { label: 'Entrefer max sous pôle',       symbol: 'δ_M',        value: fmt(results.deltaM, 3),              unit: 'cm' },
+              { label: 'Arc polaire',                  symbol: 'b_p',        value: fmt(results.bp, 2),                  unit: 'cm' },
+              { label: "Rayon d'épanouissement",       symbol: 'R_p',        value: fmt(results.Rp, 2),                  unit: 'cm' },
+              { label: "Hauteur d'épanouissement",     symbol: 'h_p',        value: fmt(results.hp, 2),                  unit: 'cm' },
+              { label: 'Longueur noyau polaire',       symbol: 'l_M',        value: fmt(results.lM, 1),                  unit: 'cm' },
+              { label: 'Coefficient de dispersion',    symbol: 'σ_N',        value: fmt(results.sigmaN, 3),              unit: 'p.u.' },
+              { label: 'Flux magnétique polaire',      symbol: 'Φ_M',        value: `${fmt(results.PhiM / 1e6, 2)} × 10⁶`, unit: 'Mx' },
+              { label: 'Section théorique noyau',      symbol: 'S_M',        value: fmt(results.SM, 0),                  unit: 'cm²' },
+              { label: 'Largeur du noyau polaire',     symbol: 'b_M',        value: fmt(results.bM, 1),                  unit: 'cm' },
+              { label: 'Hauteur noyau (calcul)',       symbol: 'h_{M,calc}', value: fmt(results.hM_calc, 2),             unit: 'cm' },
+              { label: 'Hauteur noyau (adoptée)',      symbol: 'h_M',        value: fmt(results.hM, 1),                  unit: 'cm' },
+              { label: "Diamètre de l'arbre",          symbol: 'd_{noy}',    value: fmt(results.dnoy, 0),                unit: 'cm' },
+              { label: 'Hauteur de la culasse rotor',  symbol: 'H_a',        value: fmt(results.Ha, 2),                  unit: 'cm' },
+              { label: 'Longueur du rotor (sans axe)', symbol: 'l_a',        value: fmt(results.la, 1),                  unit: 'cm' },
+              { label: 'Induction culasse rotor',      symbol: 'B_a',        value: fmt(results.Ba, 0),                  unit: 'G' },
+            ]}
+          />
+
         </div>
 
-        {/* RIGHT COLUMN: Engineering Formulas */}
-        <div className="space-y-4">
-          {/* Formula 1: Arc polaire */}
-          <Formula label="Arc polaire">
-            <span>
-              b<sub>p</sub> = {sym.alpha}<sub>p</sub> {sym.dot} {sym.tau} = {fmt(calculatedRotor.bp, 1)} cm
-            </span>
-          </Formula>
+        {/* ================================================================ */}
+        {/* COLONNE DROITE : FORMULES D'INGÉNIERIE SÉCURISÉES (HTML INLINE)  */}
+        {/* ================================================================ */}
+        <Card className="shadow-sm border-t-4 border-t-slate-600 bg-slate-50/50 dark:bg-slate-900/50 h-fit">
+          <CardHeader>
+            <CardTitle className="text-xl">Formules Mathématiques</CardTitle>
+            <CardDescription>Équations analytiques exhaustives utilisées pour l'Étape 6</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
 
-          {/* Formula 2: Rayon d'épanouissement */}
-          <Formula label="Rayon d'épanouissement polaire">
-            <div className="text-center">
-              <div>R<sub>p</sub> = <Frac num={<>D</>} den={<>2</>}/> + <Frac num={<>8D({sym.delta}<sub>M</sub> - {sym.delta})</>} den={<>b<sub>p</sub><sup>2</sup></>}/></div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.Rp, 1)} cm</div>
-            </div>
-          </Formula>
+            <Formula label="Arc Polaire et Entrefer Max">
+              <div className="flex flex-col gap-2 w-full text-center">
+                <div>
+                  <span className="italic font-semibold mr-2">b<sub>p</sub></span>
+                  <span className="mr-2">=</span>
+                  <span>{sym.alpha}<sub>p</sub> {sym.dot} {sym.tau}</span>
+                </div>
+                <div>
+                  <span className="italic font-semibold mr-2">{sym.delta}<sub>M</sub></span>
+                  <span className="mr-2">=</span>
+                  <span>1.5 {sym.dot} {sym.delta}</span>
+                </div>
+              </div>
+            </Formula>
 
-          {/* Formula 3: Hauteur d'épanouissement */}
-          <Formula label="Hauteur d'épanouissement polaire">
-            <div className="text-center">
-              <div>h<sub>p</sub> = h' + R<sub>p</sub> - {sym.sqrt(`R_p^2 - (b_p/2)^2`)}</div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.hp, 1)} cm</div>
-            </div>
-          </Formula>
+            <Formula label="Rayon de l'Épanouissement Polaire">
+              <span className="italic font-semibold mr-2">R<sub>p</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num="D" den="2" />
+              <span className="mx-2">+</span>
+              <Frac
+                num={<span>8 {sym.dot} D {sym.dot} ({sym.delta}<sub>M</sub> - {sym.delta})</span>}
+                den={<span>b<sub>p</sub>²</span>}
+              />
+            </Formula>
 
-          {/* Formula 4: Coefficient de dispersion polaire */}
-          <Formula label="Coefficient de dispersion polaire">
-            <div className="text-center">
-              <div>{sym.sigma}<sub>n</sub> = 1 + K<sub>{sym.sigma}</sub> <Frac num={<>35 {sym.delta}</>} den={<>{sym.tau}<sup>2</sup></>}/></div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.sigmaN, 3)}</div>
-            </div>
-          </Formula>
+            <Formula label="Hauteur de l'Épanouissement">
+              <span className="italic font-semibold mr-2">h<sub>p</sub></span>
+              <span className="mr-2">=</span>
+              <span>h' + R<sub>p</sub> - {sym.sqrt(<span>R<sub>p</sub>² - (b<sub>p</sub> / 2)²</span>)}</span>
+            </Formula>
 
-          {/* Formula 5: Flux dans le pôle */}
-          <Formula label="Flux dans la zone polaire">
-            <div className="text-center">
-              <div>{sym.phi}<sub>M</sub> = {sym.sigma}<sub>n</sub> {sym.dot} {sym.phi}<sub>ch</sub></div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.PhiM / 1e6, 2)} × 10⁶ Mx</div>
-            </div>
-          </Formula>
+            <Formula label="Coefficient de Dispersion">
+              <span className="italic font-semibold mr-2">{sym.sigma}<sub>N</sub></span>
+              <span className="mr-2">=</span>
+              <span>1 + K<sub>{sym.sigma}</sub> {sym.dot} <Frac num={<span>35 {sym.dot} {sym.delta}</span>} den={<span>{sym.tau}²</span>} /></span>
+            </Formula>
 
-          {/* Formula 6: Largeur noyau polaire */}
-          <Formula label="Largeur du noyau polaire">
-            <div className="text-center">
-              <div>b<sub>M</sub> = <Frac num={<>{sym.phi}<sub>M</sub></>} den={<>B<sub>M</sub>* · K<sub>f</sub> · l<sub>M</sub></>}/></div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.bM, 1)} cm</div>
-            </div>
-          </Formula>
+            <Formula label="Flux Magnétique Polaire">
+              <span className="italic font-semibold mr-2">{sym.phi}<sub>M</sub></span>
+              <span className="mr-2">=</span>
+              <span>{sym.sigma}<sub>N</sub> {sym.dot} {sym.phi}<sub>ch</sub></span>
+            </Formula>
 
-          {/* Formula 7: Hauteur noyau polaire */}
-          <Formula label="Hauteur du noyau polaire">
-            <div className="text-center">
-              <div>h<sub>M</sub> = 10.5 {sym.delta} + 8</div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.hM, 1)} cm</div>
-            </div>
-          </Formula>
+            <Formula label="Section Théorique & Largeur du Noyau">
+              <div className="flex flex-col gap-2 w-full text-center">
+                <div>
+                  <span className="italic font-semibold mr-2">S<sub>M</sub></span>
+                  <span className="mr-2">=</span>
+                  <Frac num={<span>{sym.phi}<sub>M</sub></span>} den={<span>B<sub>M,target</sub></span>} />
+                </div>
+                <div>
+                  <span className="italic font-semibold mr-2">b<sub>M</sub></span>
+                  <span className="mr-2">=</span>
+                  <Frac num={<span>S<sub>M</sub></span>} den={<span>K<sub>f,rotor</sub> {sym.dot} l<sub>M</sub></span>} />
+                </div>
+              </div>
+            </Formula>
 
-          {/* Formula 8: Hauteur culasse rotor */}
-          <Formula label="Hauteur de la culasse du rotor">
-            <div className="text-center">
-              <div>H<sub>a</sub> = <Frac num={<>D - 2{sym.delta} - 2(h<sub>p</sub> + h<sub>M</sub>) - d<sub>arbre</sub></>} den={<>2</>}/></div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.Ha, 1)} cm</div>
-            </div>
-          </Formula>
+            <Formula label="Hauteur du Noyau Polaire (Calculée)">
+              <span className="italic font-semibold mr-2">h<sub>M,calc</sub></span>
+              <span className="mr-2">=</span>
+              <span>10.5 {sym.dot} {sym.delta} + 8</span>
+              <span className="ml-4 text-xs opacity-60">(h<sub>M</sub> final est arrondi)</span>
+            </Formula>
 
-          {/* Formula 9: Induction culasse rotor */}
-          <Formula label="Induction dans la culasse du rotor">
-            <div className="text-center">
-              <div>B<sub>a</sub> = <Frac num={<>{sym.phi}<sub>M</sub></>} den={<>2 H<sub>a</sub> l<sub>a</sub></>}/></div>
-              <div className="text-xs mt-1 text-muted-foreground">= {fmt(calculatedRotor.Ba, 0)} Gauss</div>
-            </div>
-          </Formula>
-        </div>
-      </div>
+            <Formula label="Hauteur Culasse Rotor">
+              <span className="italic font-semibold mr-2">H<sub>a</sub></span>
+              <span className="mr-2">=</span>
+              <Frac
+                num={<span>D - 2{sym.delta} - 2(h<sub>p</sub> + h<sub>M</sub>) - d<sub>noy</sub></span>}
+                den="2"
+              />
+            </Formula>
 
-      {/* Validation Section */}
-      <div className="mt-8 rounded-lg border border-border bg-card p-6">
-        <h3 className="text-sm font-bold text-foreground mb-4">Vérification magnétique du rotor</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className={`p-3 rounded-md border text-sm ${calculatedRotor.Ba < 15000 ? 'border-success/50 bg-success/10' : 'border-warning/50 bg-warning/10'}`}>
-            <p className="text-muted-foreground text-xs">Induction culasse</p>
-            <p className={`font-mono font-bold ${calculatedRotor.Ba < 15000 ? 'text-success' : 'text-warning'}`}>{fmt(calculatedRotor.Ba, 0)} Gauss</p>
-            <p className="text-xs text-muted-foreground mt-1">{calculatedRotor.Ba < 15000 ? '✓ OK' : '⚠ Élevé'}</p>
-          </div>
-          <div className={`p-3 rounded-md border text-sm ${calculatedRotor.Ha > 5 ? 'border-success/50 bg-success/10' : 'border-warning/50 bg-warning/10'}`}>
-            <p className="text-muted-foreground text-xs">Hauteur culasse</p>
-            <p className={`font-mono font-bold ${calculatedRotor.Ha > 5 ? 'text-success' : 'text-warning'}`}>{fmt(calculatedRotor.Ha, 1)} cm</p>
-            <p className="text-xs text-muted-foreground mt-1">{calculatedRotor.Ha > 5 ? '✓ OK' : '⚠ Faible'}</p>
-          </div>
-          <div className={`p-3 rounded-md border text-sm ${calculatedRotor.sigmaN >= 1.1 && calculatedRotor.sigmaN <= 1.3 ? 'border-success/50 bg-success/10' : 'border-warning/50 bg-warning/10'}`}>
-            <p className="text-muted-foreground text-xs">Coefficient dispersion</p>
-            <p className={`font-mono font-bold ${calculatedRotor.sigmaN >= 1.1 && calculatedRotor.sigmaN <= 1.3 ? 'text-success' : 'text-warning'}`}>{fmt(calculatedRotor.sigmaN, 3)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{calculatedRotor.sigmaN >= 1.1 && calculatedRotor.sigmaN <= 1.3 ? '✓ OK' : '⚠ Hors plage'}</p>
-          </div>
-        </div>
+            <Formula label="Induction Culasse Rotor">
+              <span className="italic font-semibold mr-2">B<sub>a</sub></span>
+              <span className="mr-2">=</span>
+              <Frac
+                num={<span>{sym.phi}<sub>M</sub></span>}
+                den={<span>2 {sym.dot} H<sub>a</sub> {sym.dot} l<sub>a</sub></span>}
+              />
+              <span className="ml-4 text-xs opacity-60 border-l border-current pl-2">l<sub>a</sub> = l<sub>M</sub> + 11.5</span>
+            </Formula>
+
+          </CardContent>
+        </Card>
+
       </div>
     </StepLayout>
   );

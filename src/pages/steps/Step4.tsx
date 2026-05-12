@@ -1,19 +1,18 @@
-'use client';
-
-import { useMemo, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
-// ============================================
-// MATH COMPONENTS (HTML-based, no KaTeX)
-// ============================================
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANTS HTML POUR RENDU MATHÉMATIQUE SÉCURISÉ (ZÉRO LATEX)
+// ─────────────────────────────────────────────────────────────────────────────
 function Formula({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border shadow-sm">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{label}</p>
-      <div className="flex justify-center items-center py-1 overflow-x-auto text-slate-800 dark:text-slate-200 text-sm">
+    <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm mb-4">
+      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">{label}</p>
+      <div className="flex justify-center items-center py-2 overflow-x-auto text-slate-800 dark:text-slate-200 text-sm font-serif">
         {children}
       </div>
     </div>
@@ -23,322 +22,320 @@ function Formula({ label, children }: { label: string; children: React.ReactNode
 function Frac({ num, den }: { num: React.ReactNode; den: React.ReactNode }) {
   return (
     <span className="inline-flex flex-col items-center mx-1 align-middle">
-      <span className="border-b border-current px-1 leading-tight text-sm">{num}</span>
-      <span className="px-1 leading-tight text-sm">{den}</span>
+      <span className="border-b border-current px-1 leading-tight text-sm pb-0.5">{num}</span>
+      <span className="px-1 leading-tight text-sm pt-0.5">{den}</span>
     </span>
   );
 }
 
 const sym = {
   dot: <span className="mx-0.5">·</span>,
-  sqrt3: (
-    <span className="inline-flex items-center mx-1">
-      <span className="text-lg mr-0.5">√</span>
-      <span className="border-t border-current px-1">3</span>
-    </span>
-  ),
   pi: <span className="mx-0.5">π</span>,
-  phi: <span className="mx-0.5">Φ</span>,
-  cos: <span className="mx-0.5">cos(φ)</span>,
-  alpha: <span className="mx-0.5">α</span>,
-  beta: <span className="mx-0.5">β</span>,
   tau: <span className="mx-0.5">τ</span>,
+  beta: <span className="mx-0.5">β</span>,
+  phi: <span className="mx-0.5">Φ</span>,
   delta: <span className="mx-0.5">δ</span>,
+  alpha: <span className="mx-0.5">α</span>,
+  approx: <span className="mx-1">≈</span>,
 };
 
-// ============================================
-// MAIN COMPONENT
-// ============================================
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANT PRINCIPAL : STEP 4
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Step4() {
-  const { inputs, nominal, mainDimensions, stator, setCurrentStep } = useMachineStore();
+  const { inputs, nominal, mainDimensions, setCurrentStep } = useMachineStore();
 
-  const statorData = useMemo(() => {
-    if (!inputs || !nominal || !mainDimensions) return null;
-
-    try {
-      return CalculationEngine.calcStator(inputs, nominal, mainDimensions);
-    } catch (error) {
-      console.error('[Step4] calcStator error:', error);
-      return null;
-    }
-  }, [inputs, nominal, mainDimensions, stator]);
-
-  // Update step on mount
+  // 1. Sécurité anti-boucle infinie pour la navigation
   useEffect(() => {
     if (typeof setCurrentStep === 'function') {
       setCurrentStep(4);
     }
   }, [setCurrentStep]);
 
-  // Error state: missing required inputs
-  if (!inputs || !nominal || !mainDimensions) {
-    return (
-      <StepLayout
-        stepNumber={4}
-        title="Enroulements, encoches et culasse du stator"
-        description="Dimensionnement complet de la partie statorique"
-      >
-        <p className="text-destructive font-medium">
-          Paramètres manquants. Veuillez compléter les étapes 1 à 3 (entrées, valeurs nominales, dimensions principales).
-        </p>
-      </StepLayout>
-    );
-  }
+  // 2. Délégation complète au moteur de calcul
+  const results = useMemo(() => {
+    if (
+      !inputs || !inputs.m || !inputs.f || !inputs.Un ||
+      !nominal || !nominal.p || !nominal.In || !nominal.Uph ||
+      !mainDimensions || !mainDimensions.D || !mainDimensions.A ||
+      !mainDimensions.tau || !mainDimensions.lDeltaFinal
+    ) {
+      return null;
+    }
+    try {
+      return CalculationEngine.calcStator(inputs, nominal, mainDimensions);
+    } catch (error) {
+      console.error("Erreur lors du calcul du stator :", error);
+      return null;
+    }
+  }, [inputs, nominal, mainDimensions]);
 
-  // Error state: calculation failed
-  if (!statorData) {
-    return (
-      <StepLayout
-        stepNumber={4}
-        title="Enroulements, encoches et culasse du stator"
-        description="Dimensionnement complet de la partie statorique"
-      >
-        <p className="text-destructive font-medium">
-          Erreur lors du calcul des paramètres du stator. Vérifiez les données d'entrée.
-        </p>
-      </StepLayout>
-    );
-  }
-
-  const fmt = (v: number | null | undefined, d: number = 2): string => {
-    if (v === null || v === undefined || !Number.isFinite(v)) return '—';
-    return v.toFixed(d);
+  // Formatage propre des nombres
+  const fmt = (v: number | null | undefined, d = 2): string => {
+    if (v === null || v === undefined || isNaN(v as number)) return '—';
+    return (v as number).toFixed(d);
   };
 
-  // Extract values with safe defaults
-  const q1 = statorData.q1 || 0;
-  const Z1 = statorData.Z1 || 0;
-  const t1 = statorData.t1 || 0;
-  const up1 = statorData.up1 || 0;
-  const w1 = statorData.w1 || 0;
-  const Y = statorData.Y || 0;
-  const Kw1 = statorData.Kw1 || 0;
-  const Phi0 = statorData.Phi0 || 0;
-  const PhiCh = statorData.PhiCh || 0;
-  const Bd0 = statorData.Bd0 || 0;
-  const BdN = statorData.BdN || 0;
-  const Bd1 = statorData.Bd1 || 0;
-  const Bc = statorData.Bc || 0;
-  const Sc = statorData.Sc || 0;
-  const DeltaC = statorData.DeltaC || 0;
-  const Ra75 = statorData.Ra75 || 0;
-  const Ra75_pu = statorData.Ra75pu || 0;
-  const Gm = statorData.Gm || 0;
-  const be = statorData.be || 0;
-  const he = statorData.he || 0;
-  const Lc = statorData.Lc || 0;
-
-  const D = mainDimensions.D || 0;
-  const lDeltaFinal = mainDimensions.lDeltaFinal || 0;
-  const alphaDelta = mainDimensions.alphaDelta || 0;
-  const tau = mainDimensions.tau || 0;
-  const l = mainDimensions.l || 0;
-  const Uph = nominal.Uph || 0;
-  const In = nominal.In || 0;
-  const f = inputs.f || 0;
-  const p = nominal.p || 0;
+  // 3. Bouclier si données manquantes
+  if (!results) {
+    return (
+      <StepLayout stepNumber={4} title="Step 4 : Stator design">
+        <div className="p-6 rounded-lg border border-destructive/30 bg-destructive/10">
+          <p className="text-destructive font-bold">Erreur : Paramètres manquants pour dimensionner le Stator.</p>
+          <p className="text-destructive/80 text-sm mt-2">
+            Veuillez vous assurer que les Étapes 1, 2 et 3 ont bien été validées et complétées.
+          </p>
+        </div>
+      </StepLayout>
+    );
+  }
 
   return (
     <StepLayout
       stepNumber={4}
-      title="Enroulements, encoches et culasse du stator"
-      description="Dimensionnement complet de la partie statorique"
+      title="Step 4 : Stator design"
+      description="Dimensionnement complet des encoches, des enroulements et de la culasse du stator"
     >
-      {/* ============================================ */}
-      {/* 2-COLUMN GRID: LEFT (Results) & RIGHT (Formulas) */}
-      {/* ============================================ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* LEFT COLUMN: Summary Cards + Result Tables */}
+
+        {/* ================================================================ */}
+        {/* COLONNE GAUCHE : CARTES KPI ET TABLEAUX                          */}
+        {/* ================================================================ */}
         <div className="space-y-6">
-          {/* Summary Cards */}
+
+          {/* Cartes KPI */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Nombre d'encoches</p>
-              <p className="text-2xl font-bold font-mono text-foreground">{Z1}</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Nombre d'encoches (Z₁)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(results.Z1, 0)}</p>
             </div>
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Pas dentaire (cm)</p>
-              <p className="text-2xl font-bold font-mono text-foreground">{fmt(t1, 2)}</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Spires par Phase (w₁)</p>
+              <p className="text-2xl font-bold font-mono text-primary">{fmt(results.w1, 0)}</p>
             </div>
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Spires/phase</p>
-              <p className="text-2xl font-bold font-mono text-foreground">{w1}</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Flux Nominal (Φch)</p>
+              <p className="text-2xl font-bold font-mono text-primary">
+                {fmt(results.PhiCh / 1e6, 2)} <span className="text-sm font-normal text-muted-foreground">×10⁶ Mx</span>
+              </p>
             </div>
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Induction (Gauss)</p>
-              <p className="text-2xl font-bold font-mono text-foreground">{fmt(Bd0, 0)}</p>
+            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Densité Courant (Δc)</p>
+              <p className="text-2xl font-bold font-mono text-primary">
+                {fmt(results.DeltaC, 2)} <span className="text-sm font-normal text-muted-foreground">A/mm²</span>
+              </p>
             </div>
           </div>
 
-          {/* Result Tables */}
+          {/* Géométrie et Enroulements */}
           <ResultTable
-            title="Enroulements & Géométrie"
+            title="Géométrie et Enroulements"
             rows={[
-              { label: 'Encoches/pôle/phase', symbol: 'q₁', value: String(q1) },
-              { label: 'Nombre total encoches', symbol: 'Z₁', value: String(Z1) },
-              { label: 'Pas dentaire', symbol: 't₁', value: fmt(t1, 2), unit: 'cm' },
-              { label: 'Conducteurs/encoche', symbol: 'up₁', value: String(up1) },
-              { label: 'Spires par phase', symbol: 'w₁', value: String(w1) },
-              { label: 'Pas d\'enroulement', symbol: 'Y', value: String(Y) },
-              { label: 'Facteur d\'enroulement', symbol: 'Kw₁', value: fmt(Kw1, 3) },
+              { label: "Nombre total d'encoches",  symbol: 'Z_1',    value: fmt(results.Z1, 0),   unit: '' },
+              { label: 'Encoches par pôle/phase',  symbol: 'q_1',    value: fmt(results.q1, 0),   unit: '' },
+              { label: 'Pas dentaire',             symbol: 't_1',    value: fmt(results.t1, 2),   unit: 'cm' },
+              { label: 'Spires par phase',         symbol: 'w_1',    value: fmt(results.w1, 0),   unit: '' },
+              { label: 'Conducteurs par encoche',  symbol: 'up_1',   value: fmt(results.up1, 0),  unit: '' },
+              { label: "Pas d'enroulement",        symbol: 'Y',      value: fmt(results.Y, 0),    unit: 'encoches' },
+              { label: 'Raccourcissement du pas',  symbol: 'β',      value: fmt(results.beta, 3), unit: '' },
+              { label: "Facteur d'enroulement",    symbol: 'K_{w1}', value: fmt(results.Kw1, 3),  unit: '' },
             ]}
           />
 
+          {/* Dimensions des Encoches */}
           <ResultTable
-            title="Flux & Inductions"
+            title="Dimensions des Encoches"
             rows={[
-              { label: 'Flux à vide', symbol: 'Φ₀', value: fmt(Phi0 / 1e6, 2), unit: '× 10⁶ Wb' },
-              { label: 'Flux en charge', symbol: 'Φ_ch', value: fmt(PhiCh / 1e6, 2), unit: '× 10⁶ Wb' },
-              { label: 'Induction entrefer (vide)', symbol: 'B_δ₀', value: fmt(Bd0, 0), unit: 'Gauss' },
-              { label: 'Induction entrefer (charge)', symbol: 'B_δN', value: fmt(BdN, 0), unit: 'Gauss' },
-              { label: 'Induction dent', symbol: 'B_d1', value: fmt(Bd1, 0), unit: 'Gauss' },
-              { label: 'Induction culasse', symbol: 'B_c', value: fmt(Bc, 0), unit: 'Gauss' },
+              { label: "Largeur d'encoche",         symbol: 'b_e',    value: fmt(results.be, 2),  unit: 'mm' },
+              { label: "Hauteur d'encoche (calcul)", symbol: 'h_e',   value: fmt(results.he, 2),  unit: 'mm' },
+              { label: 'Largeur de la dent',         symbol: 'b_{d1}',value: fmt(results.bd1, 2), unit: 'cm' },
+              { label: 'Encombrement (têtes)',       symbol: 'l_e',   value: fmt(results.le, 2),  unit: 'mm' },
             ]}
           />
 
+          {/* Circuit Magnétique Stator */}
           <ResultTable
-            title="Conducteur & Résistance"
+            title="Circuit Magnétique Stator"
             rows={[
-              { label: 'Section conducteur', symbol: 'S_c', value: fmt(Sc, 1), unit: 'mm²' },
-              { label: 'Densité courant', symbol: 'Δ_c', value: fmt(DeltaC, 2), unit: 'A/mm²' },
-              { label: 'Longueur moyenne', symbol: 'L_c', value: fmt(Lc, 2), unit: 'm' },
-              { label: 'Résistance 75°C', symbol: 'R_a75', value: fmt(Ra75, 4), unit: 'Ω' },
-              { label: 'Résistance (p.u.)', symbol: 'R_a75*', value: fmt(Ra75_pu, 4) },
-              { label: 'Poids cuivre', symbol: 'G_m', value: fmt(Gm, 1), unit: 'kg' },
+              { label: 'Flux magnétique à vide',      symbol: 'Φ_0',    value: `${fmt(results.Phi0 / 1e6, 2)} × 10⁶`,   unit: 'Mx' },
+              { label: 'Flux magnétique en charge',   symbol: 'Φ_{ch}', value: `${fmt(results.PhiCh / 1e6, 2)} × 10⁶`,  unit: 'Mx' },
+              { label: "Induction entrefer (à vide)", symbol: 'B_{δ0}', value: fmt(results.Bd0, 0),                      unit: 'G' },
+              { label: 'Induction entrefer nominale', symbol: 'B_{δN}', value: fmt(results.BdN, 0),                      unit: 'G' },
+              { label: 'Induction dentaire (charge)', symbol: 'B_{d1}', value: fmt(results.Bd1, 0),                      unit: 'G' },
+              { label: 'Hauteur culasse stator',      symbol: 'h_c',    value: fmt(results.hc, 2),                       unit: 'cm' },
+              { label: 'Induction culasse (charge)',  symbol: 'B_c',    value: fmt(results.Bc, 0),                       unit: 'G' },
             ]}
           />
 
-          {/* Slot Geometry SVG */}
-          <div className="rounded-lg border border-border p-4 bg-muted/30">
-            <p className="text-sm font-semibold text-foreground mb-3">Géométrie de l'encoche</p>
-            <svg viewBox="0 0 150 300" className="w-full max-w-xs mx-auto" fill="none" stroke="currentColor" strokeWidth="1.5">
-              {/* Stator back iron */}
-              <rect x="20" y="10" width="110" height="280" rx="3" className="stroke-border" strokeDasharray="4 2" />
-              {/* Slot opening */}
-              <rect x="55" y="10" width="40" height="18" className="fill-primary/20 stroke-primary" />
-              {/* Upper coil */}
-              <rect x="40" y="35" width="70" height="100" rx="2" className="fill-accent/20 stroke-accent" />
-              {/* Insulation divider */}
-              <line x1="40" y1="138" x2="110" y2="138" className="stroke-warning" strokeDasharray="3 2" strokeWidth="1" />
-              {/* Lower coil */}
-              <rect x="40" y="145" width="70" height="100" rx="2" className="fill-accent/20 stroke-accent" />
-              {/* Dimensions */}
-              <text x="115" y="90" className="fill-muted-foreground text-[10px] font-mono">
-                h_e={fmt(he, 0)}mm
-              </text>
-              <text x="70" y="285" className="fill-muted-foreground text-[10px] font-mono">
-                b_e={fmt(be, 1)}mm
-              </text>
-            </svg>
-          </div>
+          {/* Cuivre et Conducteurs */}
+          <ResultTable
+            title="Cuivre et Conducteurs"
+            rows={[
+              { label: 'Dimensions fil nu (a × b)',  symbol: 'a × b',    value: `${fmt(results.a_cond, 2)} × ${fmt(results.b_cond, 2)}`, unit: 'mm' },
+              { label: 'Section conducteur',         symbol: 'S_c',      value: fmt(results.Sc, 2),                                      unit: 'mm²' },
+              { label: 'Densité de courant',         symbol: 'Δ_c',      value: fmt(results.DeltaC, 2),                                  unit: 'A/mm²' },
+              { label: 'Longueur phase',             symbol: 'L_c',      value: fmt(results.Lc, 2),                                      unit: 'm' },
+              { label: 'Résistance phase (75°C)',    symbol: 'R_{a75}',  value: fmt(results.Ra75, 4),                                    unit: 'Ω' },
+              { label: 'Résistance par unité',       symbol: 'R_{a75}*', value: fmt(results.Ra75pu, 4),                                  unit: 'p.u.' },
+              { label: 'Poids total cuivre stator',  symbol: 'G_M',      value: fmt(results.Gm, 1),                                      unit: 'kg' },
+            ]}
+          />
+
         </div>
 
-        {/* RIGHT COLUMN: Engineering Formulas */}
-        <div className="space-y-6">
-          <Formula label="Nombre total d'encoches">
-            <div className="flex items-center justify-center gap-1">
-              Z<sub className="text-xs">1</sub> <span className="mx-1">=</span> 2p {sym.dot} m {sym.dot} q<sub className="text-xs">1</sub>
-              <span className="mx-1">=</span>
-              <span className="font-mono">{Z1}</span>
-            </div>
-          </Formula>
+        {/* ================================================================ */}
+        {/* COLONNE DROITE : FORMULES D'INGÉNIERIE SÉCURISÉES (HTML INLINE)  */}
+        {/* ================================================================ */}
+        <Card className="shadow-sm border-t-4 border-t-slate-600 bg-slate-50/50 dark:bg-slate-900/50 h-fit">
+          <CardHeader>
+            <CardTitle className="text-xl">Formules Mathématiques</CardTitle>
+            <CardDescription>Rappel des équations utilisées pour l'Étape 4</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
 
-          <Formula label="Pas dentaire">
-            <div className="flex items-center justify-center gap-1">
-              t<sub className="text-xs">1</sub> <span className="mx-1">=</span>
-              <Frac num={<>{sym.pi} {sym.dot} D</>} den={<>Z<sub className="text-xs">1</sub></>} />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(t1, 2)} cm</span>
-            </div>
-          </Formula>
+            {/* ── Encoches et spires ── */}
+            <Formula label="Nombre total d'encoches">
+              <span className="italic font-semibold mr-2">Z<sub>1</sub></span>
+              <span className="mr-2">=</span>
+              <span>2p {sym.dot} m {sym.dot} q<sub>1</sub></span>
+            </Formula>
 
-          <Formula label="Spires par phase">
-            <div className="flex items-center justify-center gap-1">
-              w<sub className="text-xs">1</sub> <span className="mx-1">=</span>
-              <Frac num={<>p {sym.dot} q<sub className="text-xs">1</sub> {sym.dot} up<sub className="text-xs">1</sub></>} den={<>a</>} />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{w1}</span>
-            </div>
-          </Formula>
+            <Formula label="Pas dentaire">
+              <span className="italic font-semibold mr-2">t<sub>1</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>{sym.pi} {sym.dot} D</span>} den={<span>Z<sub>1</sub></span>} />
+            </Formula>
 
-          <Formula label="Flux magnétique à vide">
-            <div className="flex items-center justify-center gap-1 text-xs">
+            <Formula label="Conducteurs par encoche">
+              <span className="italic font-semibold mr-2">up<sub>1</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>A {sym.dot} t<sub>1</sub></span>} den={<span>I<sub>n</sub></span>} />
+            </Formula>
+
+            <Formula label="Spires par phase">
+              <span className="italic font-semibold mr-2">w<sub>1</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>p {sym.dot} q<sub>1</sub> {sym.dot} up<sub>1</sub></span>} den="a" />
+            </Formula>
+
+            <Formula label="Pas & Facteur d'enroulement">
+              <div className="flex flex-col gap-2 w-full text-center">
+                <div>
+                  <span className="italic font-semibold mr-2">Y</span>
+                  {sym.approx}
+                  <span>0.778 {sym.dot} {sym.tau}<sub>slots</sub></span>
+                </div>
+                <div>
+                  <span className="italic font-semibold mr-2">K<sub>w1</sub></span>
+                  <span className="mr-2">=</span>
+                  <span>K<sub>d</sub> {sym.dot} K<sub>p</sub></span>
+                </div>
+              </div>
+            </Formula>
+
+            {/* ── Flux et Inductions ── */}
+            <Formula label="Flux magnétique à vide (Φ₀)">
+              <span className="italic font-semibold mr-2">{sym.phi}<sub>0</sub></span>
+              <span className="mr-2">=</span>
               <Frac
-                num={<>4 {sym.dot} U<sub>ph</sub> {sym.dot} 10<sup>8</sup></>}
-                den={<>0.09 {sym.dot} f {sym.dot} w<sub>1</sub> {sym.dot} K<sub>01</sub></>}
+                num={<span>U<sub>ph</sub> {sym.dot} 10<sup>8</sup></span>}
+                den={<span>4 {sym.dot} K<sub>B</sub> {sym.dot} f {sym.dot} w<sub>1</sub> {sym.dot} K<sub>w1</sub></span>}
               />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(Phi0 / 1e6, 2)} × 10⁶ Wb</span>
-            </div>
-          </Formula>
+            </Formula>
 
-          <Formula label="Induction entrefer à vide">
-            <div className="flex items-center justify-center gap-1">
-              B<sub className="text-xs">δ0</sub> <span className="mx-1">=</span>
+            <Formula label="Flux en charge (Φch)">
+              <span className="italic font-semibold mr-2">{sym.phi}<sub>ch</sub></span>
+              <span className="mr-2">=</span>
+              <span>1.08 {sym.dot} {sym.phi}<sub>0</sub></span>
+            </Formula>
+
+            <Formula label="Induction dans l'entrefer à vide (Bδ0)">
+              <span className="italic font-semibold mr-2">B<sub>{sym.delta}0</sub></span>
+              <span className="mr-2">=</span>
               <Frac
-                num={<>{sym.phi}<sub>0</sub></>}
-                den={<>{sym.alpha}<sub>δ</sub> {sym.dot} {sym.tau} {sym.dot} l<sub>δ</sub></>}
+                num={<span>{sym.phi}<sub>0</sub></span>}
+                den={<span>{sym.alpha}<sub>{sym.delta}</sub> {sym.dot} {sym.tau} {sym.dot} l<sub>{sym.delta},fin</sub></span>}
               />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(Bd0, 0)} G</span>
-            </div>
-          </Formula>
+            </Formula>
 
-          <Formula label="Flux en charge (1.08 × Φ₀)">
-            <div className="flex items-center justify-center gap-1">
-              {sym.phi}<sub>ch</sub> <span className="mx-1">=</span> 1.08 {sym.dot} {sym.phi}<sub>0</sub>
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(PhiCh / 1e6, 2)} × 10⁶ Wb</span>
-            </div>
-          </Formula>
+            <Formula label="Induction nominale en charge (BδN)">
+              <span className="italic font-semibold mr-2">B<sub>{sym.delta}N</sub></span>
+              <span className="mr-2">=</span>
+              <span>1.08 {sym.dot} B<sub>{sym.delta}0</sub></span>
+            </Formula>
 
-          <Formula label="Induction dent (avec saturation)">
-            <div className="flex items-center justify-center gap-1 text-xs">
+            {/* ── Géométrie dent / culasse ── */}
+            <Formula label="Géométrie de la dent">
+              <div className="flex flex-col gap-2 w-full text-center">
+                <div>
+                  <span className="italic font-semibold mr-2">b<sub>e</sub></span>
+                  <span className="mr-2">=</span>
+                  <span>0.47 {sym.dot} t<sub>1</sub> {sym.dot} 10</span>
+                </div>
+                <div>
+                  <span className="italic font-semibold mr-2">b<sub>d1</sub></span>
+                  <span className="mr-2">=</span>
+                  <span>t<sub>1</sub> − (b<sub>e</sub> / 10)</span>
+                </div>
+              </div>
+            </Formula>
+
+            <Formula label="Hauteur de la culasse">
+              <span className="italic font-semibold mr-2">h<sub>c</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>D<sub>a</sub> − D</span>} den="2" />
+              <span className="mx-2">−</span>
+              <Frac num={<span>h<sub>e</sub></span>} den="10" />
+            </Formula>
+
+            <Formula label="Induction dentaire en charge">
+              <span className="italic font-semibold mr-2">B<sub>d1</sub></span>
+              <span className="mr-2">=</span>
               <Frac
-                num={<>B<sub>δN</sub> {sym.dot} t<sub>1</sub> {sym.dot} l<sub>δ</sub></>}
-                den={<>b<sub>d1</sub> {sym.dot} l {sym.dot} K<sub>f</sub></>}
+                num={<span>B<sub>{sym.delta}N</sub> {sym.dot} t<sub>1</sub> {sym.dot} l<sub>{sym.delta},fin</sub></span>}
+                den={<span>b<sub>d1</sub> {sym.dot} l {sym.dot} K<sub>f</sub></span>}
               />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(Bd1, 0)} G</span>
-            </div>
-          </Formula>
+            </Formula>
 
-          <Formula label="Induction culasse stator">
-            <div className="flex items-center justify-center gap-1">
-              B<sub className="text-xs">c</sub> <span className="mx-1">=</span>
-              <Frac num={<>{sym.phi}<sub>ch</sub></>} den={<>2 {sym.dot} h<sub>c</sub> {sym.dot} l {sym.dot} K<sub>f</sub></>} />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(Bc, 0)} G</span>
-            </div>
-          </Formula>
+            <Formula label="Induction dans la culasse">
+              <span className="italic font-semibold mr-2">B<sub>c</sub></span>
+              <span className="mr-2">=</span>
+              <Frac
+                num={<span>{sym.phi}<sub>ch</sub></span>}
+                den={<span>2 {sym.dot} h<sub>c</sub> {sym.dot} l {sym.dot} K<sub>f</sub></span>}
+              />
+            </Formula>
 
-          <Formula label="Densité courant (A/mm²)">
-            <div className="flex items-center justify-center gap-1">
-              Δ<sub className="text-xs">c</sub> <span className="mx-1">=</span>
-              <Frac num={<>I<sub>n</sub></>} den={<>S<sub>c</sub></>} />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(DeltaC, 2)} A/mm²</span>
-            </div>
-          </Formula>
+            {/* ── Cuivre ── */}
+            <Formula label="Densité de courant">
+              <span className="italic font-semibold mr-2">Δ<sub>c</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>I<sub>n</sub></span>} den={<span>S<sub>c</sub></span>} />
+            </Formula>
 
-          <Formula label="Résistance stator à 75°C">
-            <div className="flex items-center justify-center gap-1">
-              R<sub className="text-xs">a75</sub> <span className="mx-1">=</span>
-              <Frac num={<>1</>} den={<>46</>} />
-              {sym.dot}
-              <Frac num={<>L<sub>c</sub></>} den={<>S<sub>c</sub></>} />
-              <span className="mx-1">=</span>
-              <span className="font-mono">{fmt(Ra75, 4)} Ω</span>
-            </div>
-          </Formula>
+            <Formula label="Résistance de phase (à 75°C)">
+              <span className="italic font-semibold mr-2">R<sub>a75</sub></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>1</span>} den={<span>46</span>} />
+              <span className="mx-2">{sym.dot}</span>
+              <Frac num={<span>L<sub>c</sub></span>} den={<span>S<sub>c</sub></span>} />
+            </Formula>
 
-          {/* Info box */}
-          <div className="rounded-lg border border-info/50 bg-info/10 p-4">
-            <p className="text-xs text-info font-medium">
-              ℹ Tous les calculs sont extraits de la fonction CalculationEngine.calcStator() avec les spécifications IEC 60034.
-            </p>
-          </div>
-        </div>
+            <Formula label="Résistance en Per Unit (R*a75)">
+              <span className="italic font-semibold mr-2">R<sub>a75</sub><sup>*</sup></span>
+              <span className="mr-2">=</span>
+              <Frac num={<span>I<sub>n</sub> {sym.dot} R<sub>a75</sub></span>} den={<span>U<sub>ph</sub></span>} />
+            </Formula>
+
+            <Formula label="Poids total du Cuivre (Stator)">
+              <span className="italic font-semibold mr-2">G<sub>M</sub></span>
+              <span className="mr-2">=</span>
+              <span>8.9 {sym.dot} m {sym.dot} L<sub>c</sub> {sym.dot} S<sub>c</sub> {sym.dot} 10<sup>−3</sup></span>
+            </Formula>
+
+          </CardContent>
+        </Card>
+
       </div>
     </StepLayout>
   );

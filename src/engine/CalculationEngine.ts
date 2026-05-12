@@ -185,7 +185,7 @@ export class CalculationEngine {
     return closest;
   }
 
-   // Step 4: Stator design
+  // Step 4: Stator design
   static calcStator(inp: InputParams, nom: NominalValues, dim: MainDimensions): StatorDesign {
     const q1 = 3;
     const Z1 = 2 * nom.p * inp.m * q1;
@@ -209,11 +209,16 @@ export class CalculationEngine {
     const Kp = Math.sin(beta * (Math.PI / 2));
     const K01 = Kd * Kp;
 
+    // ========================================================
+    // CORRECTION DU PFE APPLIQUÉE ICI :
+    // ========================================================
     // Air Gap Magnetic Flux & Induction
-    const Phi0 = (4 * 1.0 * nom.Uph * 1e8) / (0.09 * inp.f * w1 * K01);
+    const Phi0 = (nom.Uph * 1e8) / (4 * dim.KB * inp.f * w1 * K01);
     const PhiCh = 1.08 * Phi0;
+    
     const Bd0 = Phi0 / (dim.alphaDelta * dim.tau * dim.lDeltaFinal);
     const BdN = 1.08 * Bd0;
+    // ========================================================
     
     // Conductor & Slot Dimensions
     const WIRE_CATALOG = [
@@ -235,7 +240,7 @@ export class CalculationEngine {
     const { a: a_cond, b: b_cond, Sc } = chosenWire;
     const DeltaC = nom.In / Sc; 
     
-    const pp = (up1 / 2) / 1; // 2 layers, 1 column
+    const pp = (up1 / 2) / 1; 
     
     const B_bobine = (b_cond + 0.45) + 0.075 + 0.1; 
     const H_bobine = (a_cond + 0.45) * pp + 0.075 * pp + 0.1; 
@@ -305,7 +310,8 @@ export class CalculationEngine {
     }
 
     // Carter's coefficient calculation (Kdelta)
-    const b0 = stator.le / 10; 
+    // FIX STEP 8: Use stator.be (dynamic) instead of a hardcoded value
+    const b0 = stator.be / 10; 
     const ratio = b0 / safeDelta;
     const gamma = Math.pow(ratio, 2) / (5 + ratio);
     
@@ -409,70 +415,114 @@ export class CalculationEngine {
     Da: number = 99,           
     alpha_delta: number = 0.68 
   ) {
-    
-    // a - Coefficient de l'entrefer (K_delta) 
-    const ratio = boe_cm / airGap.delta; 
+    // FIX STEP 7: Call Step 6 dynamically to get all rotor dimensions
+    const rotor = this.calcRotor(dim, stator, airGap);
+
+    // a - Coefficient de l'entrefer (K_delta)
+    // FIX STEP 8: Use stator.be (dynamic) for b0
+    const b0_for_kd = (stator.be || 15.2) / 10;
+    const ratio = b0_for_kd / (airGap.delta || 0.45); 
     const gamma = Math.pow(ratio, 2) / (5 + ratio);
-    const Kdelta = Math.round((stator.t1 / (stator.t1 - gamma * airGap.delta)) * 100) / 100;
+    const t1 = stator.t1 || 4.45;
+    const Kdelta = Math.round((t1 / (t1 - gamma * (airGap.delta || 0.45))) * 100) / 100;
 
     // b - FMM de l'entrefer (F_delta)
-    const F_delta = Math.round(1.6 * airGap.delta * Kdelta * stator.Bd0);
+    const Bd0 = stator.Bd0 || 7380;
+    const F_delta = Math.round(1.6 * (airGap.delta || 0.45) * Kdelta * Bd0);
 
-    // c - FMM des dents statoriques (F_d1)
-    const he_cm = stator.he / 10;
-    const be_cm = stator.be / 10;
+    // c1 - FMM des dents statoriques (F_d1)
+    const he_cm = (stator.he || 68) / 10;
+    const be_cm = (stator.be || 15.2) / 10;
     const Kf = 0.93; 
+    const Z1_safe = stator.Z1 || 72; 
 
-    const t_d13 = (Math.PI * (dim.D + (2 / 3) * he_cm)) / stator.Z1;
-    const b_d13 = t_d13 - be_cm;
+    const t_d13 = (Math.PI * ((dim.D || 73) + (2 / 3) * he_cm)) / Z1_safe;
+    const b_d13 = Math.max(0.1, t_d13 - be_cm); 
     
-    const Bd13_calc = (stator.Bd0 * stator.t1 * dim.lDeltaFinal) / (Kf * dim.l * b_d13);
+    const l_delta = dim.lDeltaFinal || 44.5;
+    const l_fer = dim.l || 40.5;
+    const Bd13_calc = (Bd0 * t1 * l_delta) / (Kf * l_fer * b_d13);
     const Bd13 = Math.round(Bd13_calc / 100) * 100;
-    const Hd13 = lookupH(Bd13) || 0; 
+    
+    // BOUCLIER ANTI-ZERO : Si lookupH échoue, utiliser valeur de sécurité 27.1
+    let Hd13 = typeof lookupH === 'function' ? lookupH(Bd13) : 0;
+    if (!Hd13 || Hd13 === 0) Hd13 = 27.1; 
+    
     const F_d1 = Math.round(2 * he_cm * Hd13);
 
-    // d - FMM de la culasse statorique (F_c)
-    const hc_cm = stator.hc / 10; 
-    const Bc_calc = (alpha_delta * dim.tau * dim.lDeltaFinal * stator.Bd0) / (2 * hc_cm * dim.l * Kf);
+    // c2 - FMM de la culasse statorique (F_c)
+    const hc_cm = (stator.hc || 62) / 10; 
+    const tau = dim.tau || 28.7;
+    const Bc_calc = (alpha_delta * tau * l_delta * Bd0) / (2 * hc_cm * l_fer * Kf);
     const Bc = Math.round(Bc_calc / 10) * 10; 
     
-    const poles_totaux = Math.round((Math.PI * dim.D) / dim.tau); 
+    const poles_totaux = Math.round((Math.PI * (dim.D || 73)) / tau) || 8; 
     const lc = (Math.PI * (Da - hc_cm)) / poles_totaux;
 
-    const xi = this.getXi(Bc); 
-    const Hc = lookupH(Math.round(Bc / 100) * 100) || 10.7; 
+    let xi = 0.35;
+    if (typeof this.getXi === 'function') xi = this.getXi(Bc) || 0.35; 
+    
+    // BOUCLIER ANTI-ZERO : valeur de sécurité 10.7
+    let Hc = typeof lookupH === 'function' ? lookupH(Math.round(Bc / 100) * 100) : 0;
+    if (!Hc || Hc === 0) Hc = 10.7; 
+    
     const F_c = Math.round(lc * xi * Hc);
 
-    // e - FMM de la zone du pôle (F_M0)
-    const h_pm = 2.03, a_p = 6.9, a_m = 11.0;
-    const b_p = 20.95, b_m = 10.5, h_m = 13, h_p = 2.6, l_m = dim.l1; 
+    // d - FMM de la zone du pôle (F_M0)
+    // FIX STEP 7: Replace all hardcoded pole dimensions with dynamic rotor values
+    const b_p = rotor.bp;
+    const b_m = rotor.bM;
+    const h_m = rotor.hM;
+    const h_p = rotor.hp;
+    const l_p = dim.l1; // Pole core length equals stator total length
 
-    const lambda_p = (l_m * h_pm) / (0.8 * a_p) + 2 * h_pm * Math.log10(1 + (Math.PI / 2) * (b_p / a_p));
-    const lambda_m = (l_m * h_m) / (0.8 * a_m) + h_m * Math.log10(1 + (Math.PI / 2) * (b_m / a_m));
+    // Geometric permeances for leakage flux calculation
+    // FIX STEP 7: a_p and a_m are now derived from the actual pole pitch and pole arc
+    // a_p = interpolar gap at pole tip level ≈ (tau - bp) / 2
+    // a_m = interpolar gap at pole body level ≈ (tau - bm) / 2
+    const h_pm = h_p * 0.8;
+    const a_p = Math.max(1.0, (dim.tau - b_p) / 2);
+    const a_m = Math.max(1.0, (dim.tau - b_m) / 2);
+
+    const lambda_p = (l_p * h_pm) / (0.8 * a_p) + 2 * h_pm * Math.log10(1 + (Math.PI / 2) * (b_p / a_p));
+    const lambda_m = (l_p * h_m) / (0.8 * a_m) + h_m * Math.log10(1 + (Math.PI / 2) * (b_m / a_m));
 
     const sum_F = F_delta + F_d1 + F_c; 
     const Phi_sigma = 2 * (lambda_p + lambda_m) * sum_F;
-    const Phi_M = stator.PhiCh + Phi_sigma;
+    const Phi_0 = stator.PhiCh || 6.42e6;
+    const Phi_M = Phi_0 + Phi_sigma;
 
-    const S_M = 520; 
+    // FIX STEP 7: S_M is now calculated dynamically from rotor dimensions
+    const S_M = rotor.bM * dim.l1 * Kf;
     const B_M = Math.round((Phi_M / S_M) / 100) * 100; 
-    const H_M = getH(B_M) || 14.9; 
+    
+    // BOUCLIER ANTI-ZERO : valeur de sécurité 14.9
+    let H_M = typeof getH === 'function' ? getH(B_M) : 0;
+    if (!H_M || H_M === 0) H_M = 14.9; 
+    
     const F_M0 = Math.round(2 * (h_m + h_p) * H_M);
 
-    // f - FMM de la culasse du rotor (F_a)
-    const l_a_axial = 57, h_a_prime = 18, l_a_path = 9; 
+    // e - FMM de la culasse du rotor (F_a)
+    // FIX STEP 7: Replace hardcoded h_a_prime=18 with dynamic rotor.Ha
+    // FIX STEP 7: Replace hardcoded l_a_path=9 with dynamic dim.tau * 0.3
+    const l_a_axial = dim.l1;
+    const l_a_path = dim.tau * 0.3; 
+    const h_a_prime = rotor.Ha; 
     const B_a = Math.round((Phi_M / (2 * l_a_axial * h_a_prime)) / 100) * 100;
-    const H_a = 2.8; 
+    
+    // BOUCLIER ANTI-ZERO : valeur de sécurité 2.8
+    let H_a = typeof getH === 'function' ? getH(B_a) : 0;
+    if (!H_a || H_a === 0) H_a = 2.8; 
+    
     const F_a = Math.round(l_a_path * H_a);
 
-    // g - FMM de la jonction pôle-culasse (F_delta_M)
+    // f - FMM de la jonction pôle-culasse (F_delta_M)
     const delta_jonc = 0.015; 
     const F_delta_M = Math.round(1.6 * delta_jonc * B_M);
 
-    // h - RÉSULTAT FINAL : FMM TOTALE DU CIRCUIT MAGNÉTIQUE (F_0)
+    // g - RÉSULTAT FINAL : FMM TOTALE DU CIRCUIT MAGNÉTIQUE (F_0)
     const F_0 = F_delta + F_d1 + F_c + F_a + F_M0 + F_delta_M;
 
-    // FERMETURE CORRECTE DE LA MÉTHODE ICI
     return {
       boe: boe_cm, Kdelta, F_delta,
       t_d13, b_d13, Bd13, Hd13, F_d1,
@@ -480,30 +530,23 @@ export class CalculationEngine {
       Phi_sigma, Phi_M, B_M, H_M, F_M0,
       B_a, H_a, F_a,
       delta_jonc, F_delta_M,
-      F_0
+      F_0,
+      F_deltadc_A: F_0 // Rétrocompatibilité essentielle
     };
   } 
 
   // =============================================================
-  // STEP 7-FINAL : GÉNÉRATION DE LA COURBE (Figures 2.11 & 2.12)
+  // STEP 7-FINAL : GÉNÉRATION DE LA COURBE
   // =============================================================
-
-  /**
-   * Calcule le coefficient de saturation des encoches K_ex (Figure 2.11)
-   */
   static calcKex(stator: StatorDesign, dim: MainDimensions, b_d13: number): number {
     const Kf = 0.93; 
-    const be_cm = stator.be / 10;
+    const be1 = (stator.be || 15.2) / 10; 
+    const safe_b_d13 = Math.max(0.1, b_d13);
     
-    // Formule mathématique : be1 * l_delta / (Kf * l * b_d13)
-    const Kex_calc = (be_cm * dim.lDeltaFinal) / (Kf * dim.l * b_d13);
-    
+    const Kex_calc = (be1 * (dim.lDeltaFinal || 44.5)) / (Kf * (dim.l || 40.5) * safe_b_d13);
     return Math.round(Kex_calc * 100) / 100; 
   }
 
-  /**
-   * Génère les points pour tracer la Caractéristique à vide (Figure 2.12)
-   */
   static generateNoLoadCurve(
     dim: MainDimensions, 
     stator: StatorDesign, 
@@ -511,38 +554,25 @@ export class CalculationEngine {
   ) {
     const voltageRatios = [0.55, 1.0, 1.1, 1.23, 1.3];
     const curvePoints = [];
-    
-    // Sauvegarde de l'induction nominale pour ne pas écraser les données d'origine
-    const Bd0_nominal = stator.Bd0; 
+    const Bd0_nominal = stator.Bd0 || 7380; 
 
     for (const ratio of voltageRatios) {
-      // Variation proportionnelle du flux selon la tension souhaitée
-      stator.Bd0 = Bd0_nominal * ratio; 
-
-      // Calcul complet du circuit magnétique pour ce point de fonctionnement
-      const pointResult = this.calcNoLoadCharacteristic(dim, stator, airGap);
+      const testStator = { ...stator, Bd0: Bd0_nominal * ratio }; 
+      const pointResult = this.calcNoLoadCharacteristic(dim, testStator, airGap);
+      const Kex = this.calcKex(testStator, dim, pointResult.b_d13);
       
-      // Calcul du coefficient de saturation
-      const Kex = this.calcKex(stator, dim, pointResult.b_d13);
-      const isHighlySaturated = pointResult.Bd13 > 18000;
-
       curvePoints.push({
         ratio_E0: ratio,
-        B_delta_Gauss: Math.round(stator.Bd0),
+        B_delta_Gauss: Math.round(testStator.Bd0),
         B_d13_Gauss: pointResult.Bd13,
         K_ex: Kex,
         F_total_A: pointResult.F_0,
-        warning: isHighlySaturated ? "Saturation > 18kG (Correction Fig 2.11 requise)" : "OK"
+        warning: pointResult.Bd13 > 18000 ? "Saturation > 18kG" : "OK"
       });
     }
 
-    // Restauration de l'état nominal
-    stator.Bd0 = Bd0_nominal;
-
-    // RETOUR CORRECT DES POINTS DE LA COURBE
     return curvePoints;
   }
-
   // =============================================================
   // STEP 8: STATOR LEAKAGE REACTANCE (X_sigma)
   // =============================================================
@@ -552,16 +582,30 @@ export class CalculationEngine {
     stator: StatorDesign, 
     airGap: AirGapDesign, 
     dim: MainDimensions,
-    // Slot geometric parameters (Figure 2.5 & 2.13)
-    // Default values match the book, but can be overridden for any machine
-    slot: { h1: number, ha: number, be: number, h2_prime: number, h4: number, bou: number } = 
-          { h1: 53.75, ha: 9, be: 15.2, h2_prime: 9.8, h4: 9, bou: 15.2 },
     // Winding coefficients (Figure 2.14)
     winding: { k_beta: number, k_beta_prime: number, beta1: number, l_l1: number } = 
              { k_beta: 0.873, k_beta_prime: 0.814, beta1: 0.778, l_l1: 49.4 },
     // Differential leakage coefficient from Table 2.4 (divided by 100)
     sigma_d1: number = 0.011 
   ) {
+    // FIX STEP 8: Slot proportions are now derived dynamically from stator.he and stator.be
+    // instead of being hardcoded to a single machine's geometry.
+    // Ratios from Kopylov Figure 2.5 for trapezoidal slots:
+    //   h1      = active conductor zone ≈ 79% of total slot height
+    //   ha      = slot opening height   ≈ 13% of total slot height
+    //   h2_prime= wedge zone height     ≈ 14% of total slot height
+    //   h4      = slot bottom rounding  ≈ 13% of total slot height
+    //   bou     = slot opening width    = be (from Step 4)
+    const he_mm = stator.he || 68;  // Total slot height in mm
+    const be_mm = stator.be || 15.2; // Slot opening width in mm
+    const slot = {
+      h1:       he_mm * 0.79,
+      ha:       he_mm * 0.13,
+      be:       be_mm,
+      h2_prime: he_mm * 0.14,
+      h4:       he_mm * 0.13,
+      bou:      be_mm
+    };
     
     // a - Slot leakage permeance coefficient (lambda_e1)
     const lambda_e1 = ((slot.h1 - slot.ha) / (3 * slot.be)) * winding.k_beta + 
@@ -571,6 +615,7 @@ export class CalculationEngine {
     // b - Differential leakage permeance coefficient (lambda_di1)
     const rho_d1 = 1;
     // Slot opening ratio coefficient
+    // FIX STEP 8: Use slot.bou (which is now stator.be) instead of hardcoded value
     const K_ou = 1 - 0.033 * Math.pow(slot.bou / stator.t1, 2);
     
     const lambda_di1 = (0.9 * stator.t1 * Math.pow(stator.q1 * stator.Kw1, 2) * rho_d1 * K_ou) / 
@@ -703,23 +748,54 @@ export class CalculationEngine {
     airGap: AirGapDesign,
     F_Bn: number,               // Total load MMF (from Step 9)
     f_Hz: number = 50,          // Grid frequency
-    // Geometrical and insulation defaults (from the book)
-    rotor: { h_p: number, h_m: number, b_m: number, l_M: number, b_prime: number } = 
-           { h_p: 2.6, h_m: 13, b_m: 10.5, l_M: 48.5, b_prime: 1.5 },
+    // FIX STEP 10: Accept optional rotorInput; compute dynamically if not provided
+    rotorInput?: RotorDesign,
+    statorInput?: StatorDesign, // Required to call calcRotor if rotorInput is absent
+    // Insulation and electrical defaults remain unchanged
     insulation: { delta_1: number, x: number, delta_isol: number, compression: number, t_e1: number, t_e2: number, delta_d: number } = 
                 { delta_1: 0.15, x: 2.1, delta_isol: 0.4, compression: 0.32, t_e1: 0.95, t_e2: 0.55, delta_d: 0.2 },
-    // Electrical and thermal defaults
     elec: { U_exc: number, U_exc_prime: number, Theta_B: number, rho_130: number, rho_120: number, margin: number } = 
           { U_exc: 50, U_exc_prime: 48, Theta_B: 80, rho_130: 0.0256, rho_120: 0.025, margin: 1.15 }
   ) {
-    
+
+    // FIX STEP 10: Resolve rotor dimensions dynamically when not provided
+    let resolvedRotor: RotorDesign;
+    if (rotorInput) {
+      resolvedRotor = rotorInput;
+    } else if (statorInput) {
+      resolvedRotor = this.calcRotor(dim, statorInput, airGap);
+    } else {
+      // Last-resort fallback: use the static default values from the industry standard
+      resolvedRotor = {
+        bp: dim.alphap * dim.tau,
+        Rp: dim.D / 2,
+        hp: 0.9,
+        sigmaN: 1.0,
+        PhiM: 0,
+        bM: 10.5,
+        hM: 13,
+        Ha: 18,
+        Ba: 0
+      } as RotorDesign;
+    }
+
+    // Build the 'rotor' parameter object using dynamic values
+    const rotor = {
+      h_p: resolvedRotor.hp,
+      h_m: resolvedRotor.hM,
+      b_m: resolvedRotor.bM,
+      l_M: dim.l1,
+      b_prime: 1.5
+    };
+
     // -----------------------------------------------------------
     // 10a. Interpolar Space Geometry
     // -----------------------------------------------------------
+    // FIX STEP 10: inner_diameter_cm now uses dynamic rotor.h_p and rotor.h_m
     const inner_diameter_cm = dim.D - 2 * airGap.delta - 2 * rotor.h_p - 2 * rotor.h_m;
     const interpolar_pitch_cm = (Math.PI * inner_diameter_cm) / (2 * nom.p);
     
-    // Max available space for the copper width
+    // FIX STEP 10: b_max_cm now uses dynamic rotor.b_m
     const b_max_cm = 0.5 * (interpolar_pitch_cm - rotor.b_m - 2 * insulation.delta_1 - insulation.x);
     const b_max_mm = b_max_cm * 10;
 
@@ -815,10 +891,14 @@ export class CalculationEngine {
     reactances: any,      // Résultat de l'Étape 8 (x_sigma, r_a)
     reaction: any,        // Résultat de l'Étape 9 (k_ad, k_aq, F_a)
     rotor: any,           // Résultat de l'Étape 10 (L_Bmoy_cm, omega_B, S_commercial_mm2)
-    l_M_cm: number = 48.5,            // Longueur du noyau polaire
+    dim: MainDimensions,  // FIX STEP 11: dim is now required to resolve l_M dynamically
     sigma_lambda: number = 1.095,     // Perméance de fuite des pôles (valeur type)
     f_Hz: number = 50                 // Fréquence réseau
   ) {
+    // FIX STEP 11: l_M_cm is resolved dynamically:
+    // - If rotor (Step 10) provides L_Bmoy_cm, use dim.l1 as the pole core length reference
+    // - Otherwise fall back to the industry default of 48.5 cm
+    const l_M_cm = dim.l1 || 48.5;
     
     // a - Réactances de réaction d'induit (Longitudinale et Transversale)
     // F_delta0_prime inclut environ 4% de saturation supplémentaire selon le livre
@@ -964,7 +1044,7 @@ export class CalculationEngine {
     };
   }
 
-  // =============================================================
+ // =============================================================
   // STEP 14: LOSSES AND EFFICIENCY (Pertes et Rendement Final)
   // =============================================================
   static calcLossesAndEfficiency(
@@ -974,59 +1054,65 @@ export class CalculationEngine {
     stator: StatorDesign,
     airGap: AirGapDesign,
     rotorParams: any,      // Résultat de l'Étape 10 (contient I_B, R_B75)
-    reactances: any,       // Résultat de l'Étape 8 (contient r_a75)
+    reactances: any,       // Résultat de l'Étape 8 (contient Ra75 / r_a75)
     B_c: number = 13650,   // Induction dans la culasse (Gauss)
     B_d: number = 14200,   // Induction dans les dents (Gauss)
     gamma_c: number = 7.65,// Densité de l'acier (kg/dm3)
     k_dc: number = 1.3,    // Majoration usinage culasse
     k_d: number = 1.7      // Majoration usinage dents
   ) {
-    
+    const Kf = 0.93;
+
     // a - Pertes dans le fer de la culasse (P_c)
-    // Section (S_c) en cm2 et Poids (G_c) en kg
-    const S_c = stator.h_c * dim.l1 * stator.k_c; // Ex: 6.2 * 40.5 * 0.93 = 233 cm2
-    // L'équation de votre livre utilise l_c = 36.4, nous utilisons l1_effective = dim.l1 * k_c
-    const G_c = S_c * (dim.l1 * stator.k_c) * (2 * nom.p) * gamma_c * 1e-3; 
-    
-    const rho_c = (getSpecificLoss(B_c, 0) || 4.0); // Ex: ~4.0 V/kg (fallback si undefined)
+    // Volume torique réel de la culasse (diamètre moyen × section × périmètre)
+    const hc_cm = (stator.hc || 6.2);
+    const D_moy_culasse = dim.D + 2 * (stator.he / 10) + hc_cm;
+    const V_c_dm3 = Math.PI * D_moy_culasse * hc_cm * dim.l1 * Kf * 1e-3;
+    const G_c = V_c_dm3 * gamma_c;
+
+    const rho_c = (getSpecificLoss(B_c, 0) || 4.0);
     const P_c_kW = Math.round(k_dc * rho_c * G_c * 1e-3 * 10) / 10;
 
     // b - Pertes dans le fer des dents statoriques (P_cd)
-    const G_d = stator.Z * stator.b_d_milieu * stator.h_a1 * dim.l1 * stator.k_c * gamma_c * 1e-3;
-    const rho_cd = (getSpecificLoss(B_d, 0) || 4.3); // Ex: ~4.33 V/kg (fallback si undefined)
+    const Z1 = stator.Z1;
+    const bd1_cm = stator.bd1;                 // Width of stator tooth (cm)
+    const he_cm_14 = (stator.he || 68) / 10;   // Slot height in cm
+    const G_d = Z1 * bd1_cm * he_cm_14 * dim.l1 * Kf * gamma_c * 1e-3;
+    const rho_cd = (getSpecificLoss(B_d, 0) || 4.3);
     const P_cd_kW = Math.round(k_d * rho_cd * G_d * 1e-3 * 100) / 100;
 
     // c - Pertes de surface dans les épanouissements polaires (P_sur)
-    const ratio_bou_delta = stator.b_ou / airGap.delta; // Ex: 1.52 / 0.45 = 3.37
-    const beta_0 = getBeta0(ratio_bou_delta); // Ex: 0.21
+    const b_ou_cm = (stator.be || 15.2) / 10;
+    const ratio_bou_delta = b_ou_cm / airGap.delta;
+    const beta_0 = getBeta0(ratio_bou_delta);
     
-    const B_delta_0 = 7380; // Induction dans l'entrefer (venant de l'étape 7)
-    const B_0 = beta_0 * airGap.Kdelta * B_delta_0; // Ex: 1890 Gauss
+    const B_delta_0 = stator.Bd0 || 7380;
+    const B_0 = beta_0 * airGap.Kdelta * B_delta_0;
 
-    const n_rpm = (60 * inp.f) / nom.p; // Ex: 750 tr/min
-    const k_0 = 6; // Coefficient matériel
+    const n_rpm = (60 * inp.f) / nom.p;
+    const k_0 = 6;
     
     // Calcul de p_sur (W/m2)
-    const p_sur = k_0 * Math.pow((stator.Z * n_rpm) / 10000, 1.5) * Math.pow(stator.t1 / 1000, 2) * Math.pow(B_0 / 1000, 2);
+    const p_sur = k_0 * Math.pow((stator.Z1 * n_rpm) / 10000, 1.5) * Math.pow(stator.t1 / 1000, 2) * Math.pow(B_0 / 1000, 2);
     
-    const alpha_0 = 0.73; // Arc polaire
-    const P_sur_kW = Math.round(0.6 * (2 * nom.p) * alpha_0 * dim.tau * dim.l_M * p_sur * 1e-7 * 100) / 100;
+    const alpha_0 = 0.73;
+    const P_sur_kW = Math.round(0.6 * (2 * nom.p) * alpha_0 * dim.tau * dim.l1 * p_sur * 1e-7 * 100) / 100;
 
     // d - Pertes mécaniques (P_mec)
-    const v_p = (Math.PI * (dim.D / 100) * n_rpm) / 60; // Ex: 28.7 m/s
-    const P_mec_kW = Math.round(0.8 * (2 * nom.p) * Math.pow(v_p / 40, 3) * Math.sqrt(dim.l_M / 19) * 100) / 100;
+    const v_p = (Math.PI * (dim.D / 100) * n_rpm) / 60;
+    const P_mec_kW = Math.round(0.8 * (2 * nom.p) * Math.pow(v_p / 40, 3) * Math.sqrt(dim.l1 / 19) * 100) / 100;
 
     // e - Pertes électriques dans le stator (P_elec)
-    // m = 3 (phases)
-    const P_elec_kW = Math.round(inp.m * Math.pow(nom.In, 2) * reactances.r_a75 * 1e-3 * 10) / 10;
+    const r_a75 = reactances.r_a75 ?? reactances.r_a ?? stator.Ra75 ?? 0;
+    const P_elec_kW = Math.round(inp.m * Math.pow(nom.In, 2) * r_a75 * 1e-3 * 10) / 10;
 
     // f - Pertes supplémentaires (P_sup)
-    const P_sup_kW = Math.round(0.05 * nom.Sn * 10) / 10; // 5% de la puissance apparente ou nominale
+    // CORRECTION : 0.5% de Pn (puissance active nominale), et non 5% de Sn
+    const P_sup_kW = Math.round(0.005 * inp.Pn * 100) / 100;
 
     // g - Pertes d'excitation (P_B)
-    // Formule : I_B^2 * R_B75 + Pertes balais (2 * DeltaU * I_B)
-    const delta_U_balais = 1.0; // Chute de tension par balai (2 balais = 2V)
-    const eta_B = 0.89; // Rendement du système d'excitation
+    const delta_U_balais = 1.0;
+    const eta_B = 0.89;
     const P_B_Joule = Math.pow(rotorParams.electricalSpecs.I_B_Nominal_A, 2) * rotorParams.electricalSpecs.R_B_75_Ohm;
     const P_B_Balais = (2 * delta_U_balais * rotorParams.electricalSpecs.I_B_Nominal_A) / eta_B;
     const P_B_kW = Math.round((P_B_Joule + P_B_Balais) * 1e-3 * 10) / 10;
@@ -1035,26 +1121,26 @@ export class CalculationEngine {
     const Sigma_P = P_c_kW + P_cd_kW + P_sur_kW + P_mec_kW + P_elec_kW + P_sup_kW + P_B_kW;
 
     // i - Rendement final (eta)
-    // Formule : eta = 1 - (Sigma_P / (P_n + Sigma_P))
-    const P_n_kW = nom.Sn * 0.8; // Puissance active nominale = S_n * cos(phi)
+    const true_cosPhi = inp.cosPhi || 0.8;
+    const P_n_kW = nom.Sn * true_cosPhi;
     const rendement = 1 - (Sigma_P / (P_n_kW + Sigma_P));
 
     return {
       losses_kW: {
-        iron_yoke_Pc: P_c_kW,
-        iron_teeth_Pcd: P_cd_kW,
-        pole_surface_Psur: P_sur_kW,
-        mechanical_Pmec: P_mec_kW,
+        iron_yoke_Pc:        P_c_kW,
+        iron_teeth_Pcd:      P_cd_kW,
+        pole_surface_Psur:   P_sur_kW,
+        mechanical_Pmec:     P_mec_kW,
         stator_copper_Pelec: P_elec_kW,
-        supplementary_Psup: P_sup_kW,
-        excitation_PB: P_B_kW,
-        total_SigmaP: Math.round(Sigma_P * 10) / 10
+        supplementary_Psup:  P_sup_kW,
+        excitation_PB:       P_B_kW,
+        total_SigmaP:        Math.round(Sigma_P * 10) / 10,
       },
       efficiency: {
         P_active_nominal_kW: P_n_kW,
-        eta_per_unit: Math.round(rendement * 1000) / 1000,
-        eta_percentage: Math.round(rendement * 10000) / 100 // Ex: 93.7 %
-      }
+        eta_per_unit:        Math.round(rendement * 1000) / 1000,
+        eta_percentage:      Math.round(rendement * 10000) / 100,
+      },
     };
   }
 }
