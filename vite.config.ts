@@ -3,10 +3,10 @@ import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 
 export default defineConfig({
-  base: './', // ← add this line for Electron to load assets correctly
+  base: './',
   server: {
     host: '0.0.0.0',
-    port: 8080,
+    port: 5173,
   },
   plugins: [
     react(),
@@ -16,8 +16,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+
   server: {
     port: 5173,
     strictPort: true, // Empêche Vite de changer de port tout seul
   }
 })
+
