@@ -3,17 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { HashRouter, Routes, Route } from "react-router-dom"; // J'ai retiré 'Navigate' car on n'en a plus besoin ici
-import { AppLayout } from "@/components/AppLayout";
-
-// 1️⃣ N'oubliez pas d'importer votre nouvelle page !
-// (Ajustez le chemin selon l'endroit où vous avez créé le fichier)
-import { LandingPage } from "@/components/LandingPage"; 
-
-
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
-import LandingPage from "@/pages/LandingPage";
+import { LandingPage } from "@/components/LandingPage"; 
 
 import Step1 from "@/pages/steps/Step1";
 import Step2 from "@/pages/steps/Step2";
@@ -40,14 +32,11 @@ const App = () => (
       <Sonner />
       <HashRouter>
         <Routes>
-
           
-          {/* 2️⃣ La nouvelle route pour la page d'accueil (en dehors de l'AppLayout pour ne pas avoir la barre latérale) */}
+          {/* La nouvelle route pour la page d'accueil (Une seule fois !) */}
           <Route path="/" element={<LandingPage />} />
           
           {/* Les étapes de calcul avec la barre latérale (AppLayout) */}
-          <Route path="/" element={<LandingPage />} />
- 
           <Route element={<AppLayout />}>
             <Route path="/step/1" element={<Step1 />} />
             <Route path="/step/2" element={<Step2 />} />

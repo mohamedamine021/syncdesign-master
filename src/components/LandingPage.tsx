@@ -1,90 +1,219 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Settings2 } from 'lucide-react';
 
-// Vous pourrez remplacer ces liens par vos propres images locales plus tard (ex: '/moteur1.jpg')
-const MOTOR_IMAGES = [
-  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=800&q=80'
+// ─── Constantes ──────────────────────────────────────────────────────────────
+// 👇 CORRECTION ICI : On déclare chaque image manuellement car moteur8 est un .png !
+const IMAGES = [
+  './moteur1.jpg',
+  './moteur2.jpg',
+  './moteur7.jpg',
+  './moteur13.jpg',
 ];
 
-export function LandingPage() {
-  const navigate = useNavigate();
-  const [currentImage, setCurrentImage] = useState(0);
+const SLIDE_INTERVAL = 4000;
 
-  // Le timer pour faire défiler les photos toutes les 4 secondes
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentImage((prev) => (prev + 1) % MOTOR_IMAGES.length);
-    }, 4000);
-    return () => clearInterval(timer);
+// ─── Carrousel ───────────────────────────────────────────────────────────────
+function Carousel() {
+  const [current, setCurrent] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  const advance = useCallback(() => {
+    setVisible(false);
+    setTimeout(() => {
+      setCurrent(prev => (prev + 1) % IMAGES.length);
+      setVisible(true);
+    }, 600); // cross-fade
   }, []);
 
+  useEffect(() => {
+    const id = setInterval(advance, SLIDE_INTERVAL);
+    return () => clearInterval(id);
+  }, [advance]);
+
   return (
-    <div className="min-h-screen w-full bg-background flex flex-col items-center justify-center p-8 text-center">
-      
-      {/* 1. Le Grand Logo */}
-      <div className="mb-6 relative">
-        <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
-        <img 
-          src="/logo.ico" 
-          alt="Logo SyncDesign" 
-          className="w-40 h-40 object-contain relative z-10 drop-shadow-2xl"
-        />
-      </div>
+    <div className="relative w-full h-full overflow-hidden rounded-2xl ring-1 ring-white/10 shadow-2xl">
+      {/* Image */}
+      <img
+        src={IMAGES[current]}
+        alt={`moteur ${current + 1}`}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 1000ms cubic-bezier(0.4,0,0.2,1)',
+        }}
+      />
 
-      {/* 2. Le Message de Bienvenue */}
-      <h1 className="text-5xl font-extrabold tracking-tight text-foreground mb-2">
-        Bienvenue à <span className="text-primary">SYNCDESIGN</span>
-      </h1>
-      <p className="text-lg text-muted-foreground font-medium mb-10 tracking-widest uppercase">
-        Édition Professionnelle
-      </p>
+      {/* Vignette bas */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-2/5 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to top, rgba(7,10,20,0.88) 0%, transparent 100%)',
+        }}
+      />
 
-      {/* 3. Le Carrousel de Photos */}
-      <div className="relative w-full max-w-3xl h-72 rounded-2xl overflow-hidden shadow-2xl mb-12 border border-border">
-        {MOTOR_IMAGES.map((img, index) => (
-          <img
-            key={index}
-            src={img}
-            alt={`Moteur ${index + 1}`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-              index === currentImage ? 'opacity-100' : 'opacity-0'
-            }`}
+      {/* Vignette côtés subtile */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse at center, transparent 50%, rgba(7,10,20,0.45) 100%)',
+        }}
+      />
+
+      {/* Indicateurs */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        {IMAGES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              setVisible(false);
+              setTimeout(() => { setCurrent(i); setVisible(true); }, 600);
+            }}
+            className="h-1 rounded-full transition-all duration-500 focus:outline-none"
+            style={{
+              width: i === current ? '2rem' : '0.5rem',
+              background:
+                i === current
+                  ? 'rgba(56,189,248,0.95)'
+                  : 'rgba(255,255,255,0.3)',
+            }}
+            aria-label={`Image ${i + 1}`}
           />
         ))}
-        {/* Petit filtre assombrissant sur les images pour faire plus joli */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
       </div>
+    </div>
+  );
+}
 
-      {/* 4. Section À propos (About) */}
-      <div className="max-w-2xl mb-14 space-y-4">
-        <div className="flex items-center justify-center gap-2 text-primary mb-2">
-          <Settings2 size={24} />
-          <h2 className="text-2xl font-bold text-foreground">À propos de l'application</h2>
+// ─── Page principale ──────────────────────────────────────────────────────────
+export function LandingPage() {
+  const navigate = useNavigate();
+
+  return (
+    <div
+      className="h-screen w-full overflow-hidden flex flex-col"
+      style={{
+        background: 'linear-gradient(160deg, #070a14 0%, #0d1525 55%, #091220 100%)',
+        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+      }}
+    >
+      {/* ═══ HAUT ════════════════════════════════════════════════════════════ */}
+      <header className="flex-none flex flex-col items-center pt-8 pb-4 px-6 select-none">
+        {/* Logo avec halo */}
+        <div className="relative mb-4">
+          {/* Halo diffus */}
+          <div
+            className="absolute inset-0 -m-6 rounded-full blur-3xl pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse, rgba(56,189,248,0.20) 0%, transparent 70%)',
+            }}
+          />
+          <img
+            src="./logo.png"
+            alt="SYNCDESIGN logo"
+            className="relative w-16 h-16 object-contain drop-shadow-lg"
+            style={{ filter: 'drop-shadow(0 0 12px rgba(56,189,248,0.5))' }}
+          />
         </div>
-        <p className="text-muted-foreground leading-relaxed">
-          SYNCDESIGN PRO est votre outil d'ingénierie avancé dédié au dimensionnement et à l'analyse des machines synchrones. 
-          Conçu pour les ingénieurs et concepteurs, il vous accompagne pas à pas depuis le cahier des charges jusqu'au calcul 
-          des pertes et du rendement global de l'alternateur.
-        </p>
-      </div>
 
-      {/* 5. Le Bouton de démarrage */}
-      <div className="flex flex-col items-center gap-4">
-        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
-          Prêt à commencer le design ?
-        </span>
+        {/* Titre */}
+        <h1
+          className="text-3xl font-bold tracking-tight text-white mb-1"
+          style={{ letterSpacing: '-0.02em' }}
+        >
+          Bienvenue à{' '}
+          <span
+            style={{
+              background: 'linear-gradient(90deg, #38bdf8 0%, #818cf8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            SYNCDESIGN
+          </span>
+        </h1>
+
+        {/* Sous-titre */}
+        <p
+          className="text-xs font-semibold tracking-[0.28em] uppercase"
+          style={{ color: 'rgba(148,163,184,0.75)' }}
+        >
+          Édition Professionnelle
+        </p>
+
+        {/* Séparateur décoratif */}
+        <div className="mt-4 flex items-center gap-3 w-full max-w-xs">
+          <div className="flex-1 h-px" style={{ background: 'rgba(56,189,248,0.18)' }} />
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(56,189,248,0.55)' }} />
+          <div className="flex-1 h-px" style={{ background: 'rgba(56,189,248,0.18)' }} />
+        </div>
+      </header>
+
+      {/* ═══ MILIEU — Carrousel ══════════════════════════════════════════════ */}
+      <main className="flex-1 flex items-center justify-center px-8 min-h-0">
+        <div className="w-full max-w-4xl h-full py-2">
+          <Carousel />
+        </div>
+      </main>
+
+      {/* ═══ BAS ═════════════════════════════════════════════════════════════ */}
+      <footer className="flex-none flex flex-col items-center gap-4 pt-3 pb-8 px-6">
+
+        {/* Séparateur */}
+        <div className="w-full max-w-lg h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+
+        {/* À propos */}
+        <div className="flex items-start gap-3 max-w-lg w-full">
+          <div
+            className="flex-none mt-0.5 p-1.5 rounded-lg"
+            style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.2)' }}
+          >
+            <Settings2 size={16} style={{ color: 'rgba(56,189,248,0.85)' }} />
+          </div>
+          <div>
+            <p
+              className="text-xs font-semibold mb-0.5"
+              style={{ color: 'rgba(203,213,225,0.9)', letterSpacing: '0.01em' }}
+            >
+              À propos de l'application
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: 'rgba(100,116,139,0.95)' }}>
+              SYNCDESIGN PRO est un outil expert de dimensionnement d'alternateurs synchrones.
+              Il guide l'ingénieur pas à pas — des grandeurs nominales jusqu'au bilan énergétique
+              final — avec calculs physiques précis et export complet des résultats.
+            </p>
+          </div>
+        </div>
+
+        {/* Bouton CTA */}
         <button
           onClick={() => navigate('/step/1')}
-          className="group relative flex items-center gap-3 bg-primary text-primary-foreground px-10 py-5 rounded-full font-bold text-xl hover:bg-primary/90 transition-all hover:scale-105 shadow-[0_0_40px_-10px_rgba(0,0,0,0.3)] shadow-primary/50"
+          className="group flex items-center gap-3 px-8 py-3.5 rounded-2xl font-semibold text-sm text-white
+                     transition-all duration-300 ease-out
+                     hover:scale-105 active:scale-100 focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+          style={{
+            background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+            boxShadow: '0 4px 24px rgba(14,165,233,0.35), 0 1px 4px rgba(0,0,0,0.4)',
+            letterSpacing: '0.01em',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+              '0 6px 32px rgba(14,165,233,0.55), 0 2px 8px rgba(0,0,0,0.5)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+              '0 4px 24px rgba(14,165,233,0.35), 0 1px 4px rgba(0,0,0,0.4)';
+          }}
         >
           Début de calcul
-          <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+          <span className="transition-transform duration-300 group-hover:translate-x-1">
+            <ArrowRight size={18} />
+          </span>
         </button>
-      </div>
 
+      </footer>
     </div>
   );
 }
