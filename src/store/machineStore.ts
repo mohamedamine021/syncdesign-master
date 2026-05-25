@@ -7,6 +7,7 @@ interface MachineStore extends MachineState {
   setIsCalculated: (status: boolean) => void; // <-- Fonction pour changer le statut
   setInputs: (inputs: Partial<InputParams>) => void;
   setCurrentStep: (step: number) => void;
+  setExcitation: (data: any) => void; // <-- ADDED: Store excitation data
   recalculate: () => void;
 }
 
@@ -53,6 +54,8 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
   isCalculated: false, // <-- Initialisé à false par défaut
 
   setIsCalculated: (status) => set({ isCalculated: status }), // <-- Mise à jour de l'état
+
+  setExcitation: (data) => set({ excitation: data }), // <-- ADDED: Save excitation data
 
   setInputs: (partial) => {
     set((state) => ({

@@ -60,7 +60,7 @@ interface ExportRow {
 // COMPOSANT PRINCIPAL : STEP 14
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Step14() {
-  const { inputs, nominal, mainDimensions, airGap, stator, reactances, setCurrentStep } = useMachineStore();
+  const { inputs, nominal, mainDimensions, airGap, stator, reactances, excitation, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
     if (typeof setCurrentStep === 'function') {
@@ -115,7 +115,7 @@ export default function Step14() {
       );
 
       // ── STEP 10 : Système d'excitation ────────────────────────────────────
-      const excitationData = CalculationEngine.calcExcitationSystem(
+      const excitationData = excitation || CalculationEngine.calcExcitationSystem(
         nominal, mainDimensions, airGap, blondelData.F_Bn || 4500, inputs.f
       );
 
@@ -208,7 +208,7 @@ export default function Step14() {
       console.error('Erreur lors du calcul des pertes et rendement :', error);
       return null;
     }
-  }, [inputs, nominal, mainDimensions, airGap, stator, reactances]);
+    }, [inputs, nominal, mainDimensions, airGap, stator, reactances, excitation]);
 
   // =========================================================================
   // FORMATAGE
@@ -308,7 +308,7 @@ export default function Step14() {
       { category: '4. Stator',              label: 'Longueur moyenne spire',          symbol: 'Lc',         value: fmt(stator.Lc, 2),                          unit: 'm'      },
       { category: '4. Stator',              label: 'Poids cuivre stator',             symbol: 'Gm',         value: fmt(stator.Gm, 2),                          unit: 'kg'     },
 
-      // ── ÉTAPE 5 : ENTREFER ────────────────────────────────────────────────
+      // ── ÉTAPE 5 : ENTREFER ──────────��─────────────────────────────────────
       { category: '5. Entrefer',            label: 'Épaisseur de l\'entrefer',        symbol: 'delta',      value: fmt(airGap.delta, 3),                       unit: 'cm'     },
       { category: '5. Entrefer',            label: 'Coefficient de Carter',           symbol: 'K_delta',    value: fmt(airGap.Kdelta, 3),                      unit: ''       },
 

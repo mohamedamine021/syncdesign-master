@@ -49,7 +49,7 @@ const sym = {
 // COMPOSANT PRINCIPAL : STEP 11
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Step11() {
-  const { inputs, nominal, mainDimensions, airGap, stator, reactances, setCurrentStep } = useMachineStore();
+  const { inputs, nominal, mainDimensions, airGap, stator, reactances, excitation, setCurrentStep } = useMachineStore();
 
   useEffect(() => {
     if (typeof setCurrentStep === 'function') {
@@ -108,7 +108,7 @@ export default function Step11() {
       console.error("Erreur lors du calcul des paramètres dynamiques :", error);
       return null;
     }
-  }, [inputs, nominal, mainDimensions, stator, airGap, reactances]);
+  }, [inputs, nominal, mainDimensions, stator, airGap, reactances, excitation]);
 
   const fmt = (v: number | null | undefined, d = 3): string => {
     if (v === null || v === undefined || isNaN(v as number)) return '—';

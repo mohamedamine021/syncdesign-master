@@ -48,7 +48,7 @@ const sym = {
 // COMPOSANT PRINCIPAL : STEP 9
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Step9() {
-  const { inputs, nominal, mainDimensions, airGap, stator, reactances, setCurrentStep } = useMachineStore();
+  const { inputs, nominal, mainDimensions, airGap, stator, reactances, setCurrentStep, setExcitation } = useMachineStore();
 
   useEffect(() => {
     if (typeof setCurrentStep === 'function') {
@@ -111,6 +111,13 @@ export default function Step9() {
       return null;
     }
   }, [inputs, nominal, mainDimensions, stator, airGap, reactances]);
+
+  // Save excitation data to store when results are ready
+  useEffect(() => {
+    if (results && results.excitation && typeof setExcitation === 'function') {
+      setExcitation(results.excitation);
+    }
+  }, [results, setExcitation]);
 
   const fmt = (v: number | null | undefined, d = 3): string => {
     if (v === null || v === undefined || isNaN(v as number)) return '—';
