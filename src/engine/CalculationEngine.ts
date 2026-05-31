@@ -125,7 +125,7 @@ export class CalculationEngine {
     const lDelta = lt * lPrimeDelta;
     
     // -------------------------------------------------------------
-    // 3. DYNAMIC VENTILATION SYSTEM
+    // 3. DYNAMIC VENTILATION SYSTEM     
     // -------------------------------------------------------------
     const bv = 1;      // Width of the ventilation duct (cm)
     const lpaq = 4.5;  // Standard thickness of a lamination packet (cm)
