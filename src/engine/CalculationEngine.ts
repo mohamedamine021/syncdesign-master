@@ -527,7 +527,7 @@ export class CalculationEngine {
       boe: boe_cm, Kdelta, F_delta,
       t_d13, b_d13, Bd13, Hd13, F_d1,
       lc, Bc, xi, Hc, F_c,
-      Phi_sigma, Phi_M, B_M, H_M, F_M0,
+      Phi_sigma, Phi_0, Phi_M, B_M, H_M, F_M0,
       B_a, H_a, F_a,
       delta_jonc, F_delta_M,
       F_0,
@@ -1103,7 +1103,12 @@ export class CalculationEngine {
     const P_mec_kW = Math.round(0.8 * (2 * nom.p) * Math.pow(v_p / 40, 3) * Math.sqrt(dim.l1 / 19) * 100) / 100;
 
     // e - Pertes électriques dans le stator (P_elec)
-    const r_a75 = reactances.r_a75 ?? reactances.r_a ?? stator.Ra75 ?? 0;
+    // r_a75 peut venir de reactances.r_a75, reactances.r_a, ou stator.Ra75 (Ω absolu → converti en p.u.)
+    const r_a75_raw = reactances?.r_a75 ?? reactances?.r_a ?? reactances?.Ra75pu ?? null;
+    // Si on reçoit Ra75 en Ohms absolus (>0.5 probablement p.u. déjà, sinon convertir)
+    const r_a75 = r_a75_raw != null
+      ? r_a75_raw
+      : (stator.Ra75 != null ? stator.Ra75 : 0.02);
     const P_elec_kW = Math.round(inp.m * Math.pow(nom.In, 2) * r_a75 * 1e-3 * 10) / 10;
 
     // f - Pertes supplémentaires (P_sup)
@@ -1111,10 +1116,28 @@ export class CalculationEngine {
     const P_sup_kW = Math.round(0.005 * inp.Pn * 100) / 100;
 
     // g - Pertes d'excitation (P_B)
+    // Protection défensive : recalculer si electricalSpecs absent ou incomplet
     const delta_U_balais = 1.0;
     const eta_B = 0.89;
-    const P_B_Joule = Math.pow(rotorParams.electricalSpecs.I_B_Nominal_A, 2) * rotorParams.electricalSpecs.R_B_75_Ohm;
-    const P_B_Balais = (2 * delta_U_balais * rotorParams.electricalSpecs.I_B_Nominal_A) / eta_B;
+
+    let I_B_nom: number;
+    let R_B75_val: number;
+
+    if (rotorParams?.electricalSpecs?.I_B_Nominal_A != null &&
+        rotorParams?.electricalSpecs?.R_B_75_Ohm   != null) {
+      // Cas normal : excitationData complet (issu de calcExcitationSystem)
+      I_B_nom  = rotorParams.electricalSpecs.I_B_Nominal_A;
+      R_B75_val = rotorParams.electricalSpecs.R_B_75_Ohm;
+    } else {
+      // Fallback : recalculer excitation à la volée avec les données disponibles
+      const F_Bn_fallback = 4500; // valeur par défaut raisonnable
+      const excFallback = CalculationEngine.calcExcitationSystem(nom, dim, airGap, F_Bn_fallback, inp.f);
+      I_B_nom  = excFallback.electricalSpecs.I_B_Nominal_A;
+      R_B75_val = excFallback.electricalSpecs.R_B_75_Ohm;
+    }
+
+    const P_B_Joule = Math.pow(I_B_nom, 2) * R_B75_val;
+    const P_B_Balais = (2 * delta_U_balais * I_B_nom) / eta_B;
     const P_B_kW = Math.round((P_B_Joule + P_B_Balais) * 1e-3 * 10) / 10;
 
     // h - Somme des pertes (Sigma P)

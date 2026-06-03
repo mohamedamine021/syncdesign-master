@@ -2,23 +2,112 @@ import React, { useEffect, useMemo } from 'react';
 import { useMachineStore } from '@/store/machineStore';
 import { StepLayout } from '@/components/StepLayout';
 import { ResultTable } from '@/components/ResultTable';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { CalculationEngine } from '@/engine/CalculationEngine';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTES GLOBALES
+// CONSTANTES
 // ─────────────────────────────────────────────────────────────────────────────
 const TOTAL_STEPS = 14;
 const CURRENT_STEP = 12;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPOSANTS HTML POUR RENDU MATHÉMATIQUE SÉCURISÉ (ZÉRO LATEX)
+// STYLES TYPOGRAPHIQUES CENTRALISÉS
 // ─────────────────────────────────────────────────────────────────────────────
-function Formula({ label, children }: { label: string; children: React.ReactNode }) {
+const typo = {
+  label:
+    'font-[Inter,sans-serif] text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400',
+  unit:
+    'font-[Inter,sans-serif] text-xs font-normal text-muted-foreground',
+  sectionTitle:
+    'font-[Inter,sans-serif] text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400',
+  cardTitle:
+    'font-[Inter,sans-serif] text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100',
+  cardDesc:
+    'font-[Inter,sans-serif] text-sm text-slate-500 dark:text-slate-400 leading-relaxed',
+  mathBody:
+    'font-mono text-sm font-normal text-slate-800 dark:text-slate-200',
+  formulaLabel:
+    'font-[Inter,sans-serif] text-[9px] font-bold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500',
+  bannerLabel:
+    'font-[Inter,sans-serif] text-[10px] font-semibold text-slate-300 uppercase tracking-[0.2em]',
+  bannerTitle:
+    'font-[Inter,sans-serif] text-2xl md:text-3xl font-extrabold text-white leading-tight tracking-tight truncate',
+  bannerDesc:
+    'font-[Inter,sans-serif] text-slate-300 text-sm mt-1 leading-relaxed font-light',
+  progressLabel:
+    'font-[Inter,sans-serif] text-[9px] text-slate-400 font-semibold uppercase tracking-widest',
+  progressValue:
+    'font-mono text-[9px] text-slate-400 font-medium tabular-nums',
+  stepDot:
+    'font-mono text-[8px] font-bold mt-0.5 tabular-nums',
+  tagLabel:
+    'font-[Inter,sans-serif] text-[10px] font-semibold uppercase tracking-wider',
+  subFormula:
+    'font-mono text-sm font-medium text-slate-600 dark:text-slate-400',
+  errorTitle:
+    'font-[Inter,sans-serif] font-bold text-destructive',
+  errorBody:
+    'font-[Inter,sans-serif] text-sm text-destructive/80 mt-2 leading-relaxed',
+  code:
+    'font-mono text-xs',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANTS MATHÉMATIQUES
+// ─────────────────────────────────────────────────────────────────────────────
+function Formula({
+  label,
+  children,
+  accent = 'sky',
+}: {
+  label: string;
+  children: React.ReactNode;
+  accent?: 'sky' | 'emerald' | 'violet' | 'amber' | 'rose' | 'cyan' | 'slate';
+}) {
+  const accents: Record<string, string> = {
+    sky:     'border-l-sky-400     bg-sky-50/60     dark:bg-sky-950/20',
+    emerald: 'border-l-emerald-400 bg-emerald-50/60 dark:bg-emerald-950/20',
+    violet:  'border-l-violet-400  bg-violet-50/60  dark:bg-violet-950/20',
+    amber:   'border-l-amber-400   bg-amber-50/60   dark:bg-amber-950/20',
+    rose:    'border-l-rose-400    bg-rose-50/60    dark:bg-rose-950/20',
+    cyan:    'border-l-cyan-400    bg-cyan-50/60    dark:bg-cyan-950/20',
+    slate:   'border-l-slate-400   bg-slate-50/60   dark:bg-slate-950/20',
+  };
+
+  const dots: Record<string, string> = {
+    sky:     'bg-sky-400',
+    emerald: 'bg-emerald-400',
+    violet:  'bg-violet-400',
+    amber:   'bg-amber-400',
+    rose:    'bg-rose-400',
+    cyan:    'bg-cyan-400',
+    slate:   'bg-slate-400',
+  };
+
   return (
-    <div className="bg-white dark:bg-slate-950 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm mb-4">
-      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">{label}</p>
-      <div className="flex justify-center items-center py-2 overflow-x-auto text-slate-800 dark:text-slate-200 text-sm font-serif">
+    <div
+      className={`
+        relative border-l-[3px] rounded-r-xl px-5 py-4 mb-3
+        border border-slate-100 dark:border-slate-800/60
+        shadow-sm transition-all duration-200
+        hover:shadow-md hover:scale-[1.01]
+        ${accents[accent]}
+      `}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dots[accent]}`} />
+        <p className={typo.formulaLabel}>{label}</p>
+      </div>
+      <div
+        className={`flex flex-wrap justify-center items-center gap-1 py-2 overflow-x-auto ${typo.mathBody}`}
+      >
         {children}
       </div>
     </div>
@@ -27,46 +116,138 @@ function Formula({ label, children }: { label: string; children: React.ReactNode
 
 function Frac({ num, den }: { num: React.ReactNode; den: React.ReactNode }) {
   return (
-    <span className="inline-flex flex-col items-center mx-1 align-middle">
-      <span className="border-b border-current px-1 leading-tight text-sm pb-0.5">{num}</span>
-      <span className="px-1 leading-tight text-sm pt-0.5">{den}</span>
+    <span className="inline-flex flex-col items-center mx-1.5 align-middle">
+      <span className={`border-b border-current px-2 pb-0.5 leading-snug ${typo.mathBody}`}>
+        {num}
+      </span>
+      <span className={`px-2 pt-0.5 leading-snug ${typo.mathBody}`}>{den}</span>
+    </span>
+  );
+}
+
+function Var({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={`font-mono italic font-semibold text-slate-800 dark:text-slate-200 ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+function Op({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={`font-mono font-light text-slate-500 dark:text-slate-400 mx-1.5 ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+function Num({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={`font-mono font-normal tabular-nums text-slate-700 dark:text-slate-300 ${className}`}>
+      {children}
     </span>
   );
 }
 
 const sym = {
-  dot: <span className="mx-0.5">·</span>,
-  prime: <span className="mx-0.5">'</span>,
+  dot:   <Op>·</Op>,
+  eq:    <Op>=</Op>,
+  plus:  <Op>+</Op>,
+  minus: <Op>−</Op>,
+  times: <Op>×</Op>,
+  prime: (
+    <span className="font-mono text-slate-800 dark:text-slate-200 mx-0.5">
+      '
+    </span>
+  ),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BANDEAU TITRE DE L'ÉTAPE
+// KPI CARD
+// ─────────────────────────────────────────────────────────────────────────────
+function KpiCard({
+  label,
+  value,
+  unit,
+  accent = 'slate',
+  children,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  accent?: 'sky' | 'emerald' | 'violet' | 'amber' | 'rose' | 'cyan' | 'slate' | 'green';
+  children?: React.ReactNode;
+}) {
+  const borders: Record<string, string> = {
+    sky:     'border-t-sky-400',
+    emerald: 'border-t-emerald-400',
+    violet:  'border-t-violet-500',
+    amber:   'border-t-amber-400',
+    rose:    'border-t-rose-400',
+    cyan:    'border-t-cyan-400',
+    slate:   'border-t-slate-400',
+    green:   'border-t-green-400',
+  };
+  const colors: Record<string, string> = {
+    sky:     'text-sky-600 dark:text-sky-400',
+    emerald: 'text-emerald-600 dark:text-emerald-400',
+    violet:  'text-violet-600 dark:text-violet-400',
+    amber:   'text-amber-600 dark:text-amber-400',
+    rose:    'text-rose-600 dark:text-rose-400',
+    cyan:    'text-cyan-600 dark:text-cyan-400',
+    slate:   'text-primary',
+    green:   'text-green-600 dark:text-green-400',
+  };
+
+  return (
+    <div
+      className={`
+        rounded-xl border border-border border-t-2 p-4
+        bg-white dark:bg-slate-900/60
+        shadow-sm hover:shadow-md transition-all duration-200
+        flex flex-col items-center text-center gap-1
+        ${borders[accent]}
+      `}
+    >
+      <p className={typo.label}>{label}</p>
+      <div className="flex items-baseline gap-1.5 mt-1">
+        <span
+          className={`font-mono text-2xl font-bold tabular-nums tracking-tight ${colors[accent]}`}
+        >
+          {value}
+        </span>
+        {unit && <span className={typo.unit}>{unit}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BANDEAU TITRE
 // ─────────────────────────────────────────────────────────────────────────────
 function StepBanner() {
   const progressPercent = (CURRENT_STEP / TOTAL_STEPS) * 100;
 
   return (
     <div className="w-full rounded-2xl overflow-hidden shadow-lg mb-8">
-      {/* Fond dégradé */}
       <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700 px-8 py-6">
         <div className="flex items-center gap-4">
 
           {/* Badge numéro */}
           <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shadow-inner">
-            <span className="text-white font-black text-2xl tracking-tight">{CURRENT_STEP}</span>
+            <span className="font-mono text-white font-black text-2xl tracking-tight">
+              {CURRENT_STEP}
+            </span>
           </div>
 
           {/* Textes */}
           <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-0.5">
+            <span className={`${typo.bannerLabel} mb-0.5`}>
               Étape {CURRENT_STEP} sur {TOTAL_STEPS}
             </span>
-
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white leading-tight tracking-tight truncate">
-              Courants de Court-Circuit
-            </h1>
-
-            <p className="text-slate-300 text-sm mt-1 leading-snug">
+            <h1 className={typo.bannerTitle}>Courants de Court-Circuit</h1>
+            <p className={typo.bannerDesc}>
               Évaluation de l'intensité des courants de défaut statorique en régime permanent
             </p>
           </div>
@@ -74,22 +255,23 @@ function StepBanner() {
           {/* Icône décorative */}
           <div className="ml-auto hidden md:flex flex-col items-center gap-1 opacity-30 flex-shrink-0">
             <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">⚡</span>
+              <span className="font-mono text-white text-2xl font-bold">⚡</span>
             </div>
-            <span className="text-[9px] text-white font-bold uppercase tracking-widest">
+            <span className="font-[Inter,sans-serif] text-[9px] text-white font-bold uppercase tracking-widest">
               CC
             </span>
           </div>
         </div>
 
-        {/* Barre de progression */}
+        {/* Progression */}
         <div className="mt-5">
-          <div className="flex justify-between text-[9px] text-slate-400 font-semibold uppercase tracking-widest mb-1.5">
-            <span>Progression globale</span>
-            <span>{CURRENT_STEP} / {TOTAL_STEPS} — {Math.round(progressPercent)} %</span>
+          <div className="flex justify-between mb-1.5">
+            <span className={typo.progressLabel}>Progression globale</span>
+            <span className={typo.progressValue}>
+              {CURRENT_STEP} / {TOTAL_STEPS} — {Math.round(progressPercent)} %
+            </span>
           </div>
 
-          {/* Barre principale */}
           <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full transition-all duration-700"
@@ -97,40 +279,34 @@ function StepBanner() {
             />
           </div>
 
-          {/* Marqueurs des 14 étapes */}
+          {/* Marqueurs */}
           <div className="relative w-full mt-1.5">
             <div className="flex justify-between">
               {Array.from({ length: TOTAL_STEPS }, (_, i) => {
                 const step = i + 1;
-                const isDone = step < CURRENT_STEP;
+                const isDone    = step < CURRENT_STEP;
                 const isCurrent = step === CURRENT_STEP;
-
                 return (
                   <div
                     key={step}
                     className="flex flex-col items-center"
                     style={{ width: `${100 / TOTAL_STEPS}%` }}
                   >
-                    {/* Pastille */}
                     <div
-                      className={`
-                        w-3 h-3 rounded-full border-2 transition-all duration-300
+                      className={`w-3 h-3 rounded-full border-2 transition-all duration-300
                         ${isCurrent
                           ? 'bg-emerald-400 border-emerald-300 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)] scale-125'
                           : isDone
                             ? 'bg-sky-400 border-sky-300'
                             : 'bg-white/15 border-white/25'
-                        }
-                      `}
+                        }`}
                     />
-
-                    {/* Numéro sous la pastille — étapes clés seulement */}
                     {(step === 1 ||
                       step === CURRENT_STEP ||
                       step === TOTAL_STEPS ||
                       step % 7 === 0) && (
                       <span
-                        className={`text-[8px] font-bold mt-0.5 ${
+                        className={`${typo.stepDot} ${
                           isCurrent
                             ? 'text-emerald-300'
                             : isDone
@@ -153,14 +329,14 @@ function StepBanner() {
       <div className="bg-slate-700 dark:bg-slate-900 px-8 py-2.5 flex flex-wrap gap-2">
         {[
           { label: 'Court-circuit permanent', color: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
-          { label: 'Exc. à vide',              color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-          { label: 'Exc. nominale',           color: 'bg-violet-500/20 text-violet-300 border-violet-500/30' },
-          { label: 'Sévérité',                color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-          { label: 'Sécurité',               color: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
+          { label: 'Exc. à vide',             color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+          { label: 'Exc. nominale',            color: 'bg-violet-500/20 text-violet-300 border-violet-500/30' },
+          { label: 'Sévérité',                 color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+          { label: 'Sécurité',                 color: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
         ].map(tag => (
           <span
             key={tag.label}
-            className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${tag.color}`}
+            className={`${typo.tagLabel} px-2.5 py-0.5 rounded-full border ${tag.color}`}
           >
             {tag.label}
           </span>
@@ -171,100 +347,104 @@ function StepBanner() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SÉPARATEUR DE SECTION
+// SÉPARATEUR
 // ─────────────────────────────────────────────────────────────────────────────
 function SectionSeparator({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-8">
       <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent" />
-      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.18em] px-3 text-center">
-        {children}
-      </span>
+      <span className={`${typo.sectionTitle} px-3 text-center`}>{children}</span>
       <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent" />
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPOSANT PRINCIPAL : STEP 12
+// COMPOSANT PRINCIPAL
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Step12() {
-  const { inputs, nominal, mainDimensions, airGap, stator, reactances, setCurrentStep } = useMachineStore();
+  const {
+    inputs,
+    nominal,
+    mainDimensions,
+    airGap,
+    stator,
+    reactances,
+    setCurrentStep,
+  } = useMachineStore();
 
   useEffect(() => {
-    if (typeof setCurrentStep === 'function') {
-      setCurrentStep(CURRENT_STEP);
-    }
+    if (typeof setCurrentStep === 'function') setCurrentStep(CURRENT_STEP);
   }, [setCurrentStep]);
 
   const results = useMemo(() => {
-    if (!inputs || !nominal || !mainDimensions || !stator || !airGap) {
-      return null;
-    }
+    if (!inputs || !nominal || !mainDimensions || !stator || !airGap) return null;
 
     try {
-      const noLoadData = CalculationEngine.calcNoLoadCharacteristic(mainDimensions, stator, airGap);
-      noLoadData.Phi_0 = stator.Phi0; 
-      if (noLoadData.F_deltadc_A === undefined) noLoadData.F_deltadc_A = noLoadData.F_delta + noLoadData.F_d1 + noLoadData.F_c;
+      const noLoadData = CalculationEngine.calcNoLoadCharacteristic(
+        mainDimensions, stator, airGap,
+      );
+      
+      // Phi_0 et F_deltadc_A sont maintenant inclus dans le retour natif de calcNoLoadCharacteristic
 
-      const reactancesData = reactances || CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
+      const reactancesData =
+        reactances ||
+        CalculationEngine.calcLeakageReactance(inputs, nominal, stator, airGap, mainDimensions);
+
+      // FIX TYPESCRIPT : "as any" pour extraire les variables correctement
       const safeReactances = {
-        xSigma: reactancesData.x_sigma_pu || reactancesData.xSigma || 0.1,
-        xq: reactancesData.xq || 1.0,
-        r_a: stator.Ra75pu || 0.02
+        xSigma: reactancesData.x_sigma_pu || (reactancesData as any).xSigma || 0.1,
+        xq:     (reactancesData as any).xq || 1.0,
+        r_a:    stator.Ra75pu || 0.02,
       };
 
       const blondelData = CalculationEngine.calcLoadExcitation(
         nominal, stator, airGap, mainDimensions, noLoadData, safeReactances,
-        airGap.delta * 1.5, mainDimensions.alphap || 0.73, inputs.cosPhi || 0.8
+        airGap.delta * 1.5, mainDimensions.alphap || 0.73, inputs.cosPhi || 0.8,
       );
+
       const safeReaction = {
-        coefficients: blondelData.coefficients || blondelData.coeffs,
-        F_a: blondelData.F_a || 0
+        coefficients: blondelData.coefficients || (blondelData as any).coeffs,
+        F_a: blondelData.F_a || 0,
       };
 
       const excitationData = CalculationEngine.calcExcitationSystem(
-        nominal, mainDimensions, airGap, blondelData.F_Bn, inputs.f
+        nominal, mainDimensions, airGap, blondelData.F_Bn, inputs.f,
       );
 
       const dynParams = CalculationEngine.calcMachineParameters(
-        nominal, airGap, noLoadData, safeReactances, safeReaction, excitationData,
-        mainDimensions.l1, 1.095, inputs.f
+        nominal, airGap, noLoadData, safeReactances, safeReaction,
+        excitationData, mainDimensions, 1.095, inputs.f,
       );
 
       const E0_prime_star_default = 1.08;
-      const shortCircuitData = CalculationEngine.calcShortCircuitCurrents(
-        nominal, 
-        dynParams, 
-        blondelData, 
-        E0_prime_star_default
+      return CalculationEngine.calcShortCircuitCurrents(
+        nominal, dynParams, blondelData, E0_prime_star_default,
       );
-
-      return shortCircuitData;
-
-    } catch (error) {
-      console.error("Erreur lors du calcul des courants de court-circuit :", error);
+    } catch (err) {
+      console.error('Erreur calcul courants de court-circuit :', err);
       return null;
     }
   }, [inputs, nominal, mainDimensions, stator, airGap, reactances]);
 
   const fmt = (v: number | null | undefined, d = 3): string => {
-    if (v === null || v === undefined || isNaN(v as number)) return '—';
+    if (v == null || isNaN(v as number)) return '—';
     return (v as number).toFixed(d);
   };
 
-  // ── Erreur : données manquantes ───────────────────────────────────────────
+  // ── Erreur ──────────────────────────────────────────────────────────────
   if (!results) {
     return (
       <StepLayout stepNumber={CURRENT_STEP} title="Courants de Court-Circuit">
         <StepBanner />
-
         <div className="p-6 rounded-lg border border-destructive/30 bg-destructive/10">
-          <p className="text-destructive font-bold">
+          <p className={typo.errorTitle}>
             Erreur : Paramètres manquants pour les calculs de court-circuit.
           </p>
-          <p className="text-destructive/80 text-sm mt-2">
-            Vérifiez que toutes les étapes précédentes (en particulier les Étapes 9 et 11) sont complétées.
+          <p className={typo.errorBody}>
+            Vérifiez que toutes les étapes précédentes (en particulier les Étapes{' '}
+            <code className={typo.code}>9</code> et{' '}
+            <code className={typo.code}>11</code>) sont complétées et valides.
           </p>
         </div>
       </StepLayout>
@@ -273,159 +453,216 @@ export default function Step12() {
 
   const { inputs: scInputs, results_pu, results_real } = results;
   const severityRatio = results_real.I_ccn_A / (nominal?.In || 1);
+  const isHighFault   = severityRatio > 2;
 
-  // ── Rendu principal ───────────────────────────────────────────────────────
+  // ── Rendu principal ─────────────────────────────────────────────────────
   return (
     <StepLayout
       stepNumber={CURRENT_STEP}
       title="Courants de Court-Circuit"
       description="Évaluation de l'intensité des courants de défaut statorique en régime permanent"
     >
-      {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 1. BANDEAU TITRE EN FRANÇAIS                                       */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
       <StepBanner />
 
-      {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 2. SÉPARATEUR                                                       */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
       <SectionSeparator>
         Résultats numériques &amp; formules
       </SectionSeparator>
 
-      {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 3. RÉSULTATS ET FORMULES                                           */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
 
-        {/* ─────────────────────────────────────────────────────────────── */}
-        {/* COLONNE GAUCHE : CARTES KPI ET TABLEAU                          */}
-        {/* ─────────────────────────────────────────────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* COLONNE GAUCHE : KPI + TABLEAUX                                   */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
         <div className="space-y-6">
 
-          {/* Cartes KPI */}
+          {/* KPI Cards */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                CC Nominal (p.u.)
-              </p>
-              <p className="text-2xl font-bold font-mono text-primary">
-                {fmt(results_pu.I_ccn, 2)}{' '}
-                <span className="text-sm font-normal text-muted-foreground">p.u.</span>
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                CC Nominal (Ampères)
-              </p>
-              <p className="text-2xl font-bold font-mono text-primary">
-                {fmt(results_real.I_ccn_A, 0)}{' '}
-                <span className="text-sm font-normal text-muted-foreground">A</span>
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border p-4 bg-slate-50 dark:bg-slate-900/50 text-center shadow-sm">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                Ratio de Sévérité
-              </p>
-              <p className="text-2xl font-bold font-mono text-primary">
-                {fmt(severityRatio, 1)}
-                <span className="text-sm font-normal text-muted-foreground"> × I<sub>n</sub></span>
-              </p>
-            </div>
-
-            <div
-              className={`rounded-lg border p-4 text-center shadow-sm ${
-                severityRatio > 2
-                  ? 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/20'
-                  : 'border-green-500/50 bg-green-50 dark:bg-green-950/20'
-              }`}
+            <KpiCard
+              label="CC Nominal (p.u.)"
+              value={fmt(results_pu.I_ccn, 2)}
+              unit="p.u."
+              accent="sky"
+            />
+            <KpiCard
+              label="CC Nominal (Ampères)"
+              value={fmt(results_real.I_ccn_A, 0)}
+              unit="A"
+              accent="emerald"
+            />
+            <KpiCard
+              label="Ratio de Sévérité"
+              value={fmt(severityRatio, 1)}
+              unit="× Iₙ"
+              accent="violet"
+            />
+            <KpiCard
+              label="Statut de sécurité"
+              value={isHighFault ? 'ÉLEVÉ' : 'MODÉRÉ'}
+              accent={isHighFault ? 'amber' : 'green'}
             >
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                Statut de sécurité
-              </p>
-              <p
-                className={`text-sm font-bold font-mono mt-2 ${
-                  severityRatio > 2
-                    ? 'text-amber-700 dark:text-amber-400'
-                    : 'text-green-700 dark:text-green-400'
-                }`}
-              >
-                {severityRatio > 2 ? 'DÉFAUT ÉLEVÉ ⚠️' : 'DÉFAUT MODÉRÉ ✅'}
-              </p>
-            </div>
+              <span className="text-lg mt-0.5">{isHighFault ? '⚠️' : '✅'}</span>
+            </KpiCard>
           </div>
 
+          {/* ── Tableau 1 : Paramètres d'entrée ── */}
           <ResultTable
             title="Paramètres d'Entrée du Court-Circuit"
             rows={[
-              { label: "Tension induite interne à vide", symbol: "E'₀*", value: fmt(scInputs.E0_prime_star, 2), unit: 'p.u.' },
-              { label: 'Réactance synchrone directe',    symbol: 'x_d',     value: fmt(scInputs.x_d_pu, 3),        unit: 'p.u.' },
-              { label: "Courant d'excitation nominal",  symbol: 'I_{Bn}*', value: fmt(scInputs.F_Bn_star_pu, 3),  unit: 'p.u.' },
+              {
+                label:  'Tension induite interne à vide',
+                symbol: <><Var>E</Var>'<sub>0</sub>*</>,
+                value:  fmt(scInputs.E0_prime_star, 2),
+                unit:   'p.u.',
+              },
+              {
+                label:  'Réactance synchrone directe',
+                symbol: <><Var>x<sub>d</sub></Var></>,
+                value:  fmt(scInputs.x_d_pu, 3),
+                unit:   'p.u.',
+              },
+              {
+                label:  "Courant d'excitation nominal",
+                symbol: <><Var>I<sub>Bn</sub></Var>*</>,
+                value:  fmt(scInputs.F_Bn_star_pu, 3),
+                unit:   'p.u.',
+              },
             ]}
           />
 
+          {/* ── Tableau 2 : Résultats en régime permanent ── */}
           <ResultTable
             title="Résultats en Régime Permanent"
             rows={[
-              { label: 'Courant CC (excitation à vide)',    symbol: 'I_{cc0}', value: fmt(results_pu.I_cc0, 3), unit: 'p.u.' },
-              { label: 'Courant CC (excitation nominale)',  symbol: 'I_{ccn}', value: fmt(results_pu.I_ccn, 3), unit: 'p.u.' },
-              { label: 'Courant nominal statorique',        symbol: 'I_n',     value: fmt(nominal?.In, 0),      unit: 'A' },
-              { label: 'Courant de défaut absolu',          symbol: 'I_{ccn}', value: fmt(results_real.I_ccn_A, 0), unit: 'A' },
+              {
+                label:  'Courant CC (excitation à vide)',
+                symbol: <><Var>I<sub>cc0</sub></Var></>,
+                value:  fmt(results_pu.I_cc0, 3),
+                unit:   'p.u.',
+              },
+              {
+                label:  'Courant CC (excitation nominale)',
+                symbol: <><Var>I<sub>ccn</sub></Var></>,
+                value:  fmt(results_pu.I_ccn, 3),
+                unit:   'p.u.',
+              },
+              {
+                label:  'Courant nominal statorique',
+                symbol: <><Var>I<sub>n</sub></Var></>,
+                value:  fmt(nominal?.In, 0),
+                unit:   'A',
+              },
+              {
+                label:  'Courant de défaut absolu',
+                symbol: <><Var>I<sub>ccn</sub></Var></>,
+                value:  fmt(results_real.I_ccn_A, 0),
+                unit:   'A',
+              },
             ]}
           />
         </div>
 
-        {/* ─────────────────────────────────────────────────────────────── */}
-        {/* COLONNE DROITE : FORMULES                                       */}
-        {/* ─────────────────────────────────────────────────────────────── */}
-        <Card className="shadow-sm border-t-4 border-t-slate-600 bg-slate-50/50 dark:bg-slate-900/50 h-fit">
-          <CardHeader>
-            <CardTitle className="text-xl">Formules Mathématiques</CardTitle>
-            <CardDescription>
-              Rapport de court-circuit en régime permanent
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* COLONNE DROITE : FORMULES                                         */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        <Card className="shadow-sm border-t-4 border-t-slate-600 bg-white/80 dark:bg-slate-900/60 h-fit backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className={typo.cardTitle}>Formules Mathématiques</CardTitle>
+            <CardDescription className={typo.cardDesc}>
+              Rapport de court-circuit en régime permanent — toutes les valeurs en p.u. sauf mention contraire
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-1">
 
-            <Formula label="1. Courant de CC (Excitation à vide)">
+            {/* ── 1. Courant CC excitation à vide ────────────────────────── */}
+            <Formula label="1 — Courant de CC (Excitation à vide)" accent="sky">
               <div className="flex flex-col items-center w-full gap-3">
-                <div className="flex items-center">
-                  <span className="italic font-semibold mr-2">I<sub>cc0</sub></span>
-                  <span className="mr-2">=</span>
+                <div className="flex justify-center items-center flex-wrap gap-1">
+                  <Var>I<sub>cc0</sub></Var>
+                  {sym.eq}
                   <Frac
-                    num={<span>E{sym.prime}<sub>0</sub>*</span>}
-                    den={<span>x<sub>d</sub></span>}
+                    num={<><Var>E</Var>{sym.prime}<Var><sub>0</sub></Var><Var>*</Var></>}
+                    den={<Var>x<sub>d</sub></Var>}
                   />
                 </div>
-                <div className="text-xs opacity-60">
-                  (Toutes les valeurs sont en p.u.)
+                <div
+                  className={`${typo.subFormula} bg-slate-100 dark:bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-center`}
+                >
+                  <span className="font-[Inter,sans-serif] text-xs text-slate-500">
+                    Toutes les valeurs en p.u.
+                  </span>
                 </div>
               </div>
             </Formula>
 
-            <Formula label="2. Courant de CC (Excitation nominale)">
+            {/* ── 2. Courant CC excitation nominale ──────────────────────── */}
+            <Formula label="2 — Courant de CC (Excitation nominale)" accent="emerald">
               <div className="flex flex-col items-center w-full gap-3">
-                <div className="flex items-center">
-                  <span className="italic font-semibold mr-2">I<sub>ccn</sub></span>
-                  <span className="mr-2">=</span>
-                  <span>I<sub>cc0</sub> {sym.dot} I<sub>Bn</sub>*</span>
+                <div className="flex justify-center items-center flex-wrap gap-1">
+                  <Var>I<sub>ccn</sub></Var>
+                  {sym.eq}
+                  <Var>I<sub>cc0</sub></Var>
+                  {sym.dot}
+                  <Var>I<sub>Bn</sub>*</Var>
                 </div>
-                <div className="text-sm font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900/50 px-4 py-2 rounded-md border border-slate-200 dark:border-slate-800">
-                  Note : <span className="italic font-semibold mx-1">I<sub>Bn</sub>*</span> ={' '}
-                  <span className="italic font-semibold mx-1">F<sub>Bn</sub>*</span>{' '}
-                  <span className="opacity-80">(Calculé à l'Étape 9 via Blondel)</span>
+                <div
+                  className={`${typo.subFormula} bg-slate-100 dark:bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 w-full text-center`}
+                >
+                  <span className="font-[Inter,sans-serif] text-xs text-slate-500 mr-1">Avec</span>
+                  <Var>I<sub>Bn</sub>*</Var>
+                  <span className="mx-1 font-[Inter,sans-serif] text-xs text-slate-500">=</span>
+                  <Var>F<sub>Bn</sub>*</Var>
+                  <span className="font-[Inter,sans-serif] text-xs text-slate-400 ml-2">
+                    (calculé via Blondel — Étape 9)
+                  </span>
                 </div>
               </div>
             </Formula>
 
-            <Formula label="3. Courant de défaut Absolu">
-              <div className="flex items-center">
-                <span className="italic font-semibold mr-2">I<sub>ccn</sub> (Ampères)</span>
-                <span className="mr-2">=</span>
-                <span>I<sub>ccn</sub> (p.u.) {sym.dot} I<sub>n</sub></span>
+            {/* ── 3. Courant absolu ───────────────────────────────────────── */}
+            <Formula label="3 — Courant de défaut absolu (Ampères)" accent="violet">
+              <div className="flex justify-center items-center flex-wrap gap-1">
+                <Var>I<sub>ccn</sub></Var>
+                <span className="font-[Inter,sans-serif] text-xs text-slate-500 mx-1">(A)</span>
+                {sym.eq}
+                <Var>I<sub>ccn</sub></Var>
+                <span className="font-[Inter,sans-serif] text-xs text-slate-500 mx-1">(p.u.)</span>
+                {sym.times}
+                <Var>I<sub>n</sub></Var>
+              </div>
+            </Formula>
+
+            {/* Séparateur */}
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-700 to-transparent my-5" />
+
+            {/* ── 4. Critère de sévérité ──────────────────────────────────── */}
+            <Formula label="4 — Critère de sévérité du défaut" accent="amber">
+              <div className="flex flex-col items-center w-full gap-4">
+                <div className="flex justify-center items-center flex-wrap gap-1">
+                  <Var>κ</Var>
+                  {sym.eq}
+                  <Frac
+                    num={<Var>I<sub>ccn</sub></Var>}
+                    den={<Var>I<sub>n</sub></Var>}
+                  />
+                </div>
+
+                <div
+                  className={`${typo.subFormula} bg-slate-100 dark:bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 w-full flex justify-center items-center gap-2`}
+                >
+                  <Var>κ</Var>
+                  <span className="font-[Inter,sans-serif] text-xs text-slate-500">=</span>
+                  <Num>{fmt(severityRatio, 2)}</Num>
+                  <span
+                    className={`font-[Inter,sans-serif] text-xs font-semibold ml-2 px-2 py-0.5 rounded-full ${
+                      isHighFault
+                        ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
+                        : 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400'
+                    }`}
+                  >
+                    {isHighFault ? '> 2 → Défaut élevé ⚠️' : '≤ 2 → Défaut modéré ✅'}
+                  </span>
+                </div>
               </div>
             </Formula>
 

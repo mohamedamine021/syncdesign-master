@@ -7,8 +7,11 @@ import { ArrowRight, Settings2 } from 'lucide-react';
 const IMAGES = [
   './moteur1.jpg',
   './moteur2.jpg',
-  './moteur7.jpg',
-  './moteur13.jpg',
+  './moteur3.png',
+  './moteur4.jpg',
+  './moteur5.jpg',
+  './moteur6.jpg',
+
 ];
 
 const SLIDE_INTERVAL = 4000;

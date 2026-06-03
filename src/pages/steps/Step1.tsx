@@ -76,7 +76,7 @@ export default function Step1() {
     <StepLayout
       stepNumber={1}
       title="Paramètres d'entrée"
-      description="Définir le cahier des charges de la machine synchrone (alternateur)"
+      description="Définir le cahier des charges de la machine synchrone à pôles saillants"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
@@ -122,6 +122,10 @@ export default function Step1() {
               <div className="flex justify-between border-b border-border/50 pb-1">
                 <span className="text-muted-foreground">Type de machine</span>
                 <span className="font-mono text-foreground font-medium">Alternateur synchrone</span>
+              </div>
+              <div className="flex justify-between border-b border-border/50 pb-1">
+                <span className="text-muted-foreground">Type de rotor</span>
+                <span className="font-mono text-foreground font-medium text-amber-600 dark:text-amber-400">Pôles saillants</span>
               </div>
               <div className="flex justify-between border-b border-border/50 pb-1">
                 <span className="text-muted-foreground">Orientation de l'arbre</span>
