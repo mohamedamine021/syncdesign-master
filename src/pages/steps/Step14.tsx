@@ -674,45 +674,110 @@ export default function Step14() {
 
     const {
       losses_kW, efficiency,
-      allData: { rotorData, noLoadData, reactancesData, reactancesRaw, blondelData, excitationData, dynParams, shortCircuitData, overloadData },
+      allData: { rotorData, reactancesData, excitationData, dynParams, shortCircuitData, overloadData },
     } = results;
 
-    const Uph = inputs.Un / Math.sqrt(3);
-    const p   = (60 * inputs.f) / inputs.nn;
-    const blondel_psi    = (blondelData as any)?.blondel?.psi_deg    ?? 0;
-    const blondel_Erd    = (blondelData as any)?.blondel?.E_rd_star   ?? 0;
-    const blondel_sinPsi = (blondelData as any)?.blondel?.sin_psi     ?? 0;
-    const blondel_cosPsi = (blondelData as any)?.blondel?.cos_psi     ?? 0;
-    const raw8 = reactancesRaw as any;
+    // ── Grandeurs de base ──────────────────────────────────────────────────────
+    const Sn_kVA   = nominal.Sn;
+    const Unl      = inputs.Un;
+    const cosPhi   = inputs.cosPhi;
+    const nn       = inputs.nn;
+    const twop     = 2 * ((60 * inputs.f) / inputs.nn);
+
+    // ── Dimensions — noms exacts de MainDimensions ────────────────────────────
+    const D        = mainDimensions.D;
+    const Da       = mainDimensions.DaNorm;
+    const tau      = mainDimensions.tau;
+    const l        = mainDimensions.l;       // longueur du fer actif (key "l" dans calcMainDimensions)
+    const delta    = airGap.delta;
+
+    // ── Stator — noms exacts de StatorDesign ──────────────────────────────────
+    const Z1       = stator.Z1;
+    const q1       = stator.q1;
+    const w1       = stator.w1;
+    const K01      = stator.Kw1;             // calcStator retourne Kw1 (pas K01)
+    const Ra75     = stator.Ra75;
+    const Gm       = stator.Gm;
+
+    // ── Rotor — noms exacts de RotorDesign (calcRotor retourne bp, bM, hM) ────
+    const rotor    = rotorData as any;
+    const bp       = rotor?.bp;
+    const bM       = rotor?.bM;
+    const hM       = rotor?.hM;
+
+    // ── Excitation — electricalSpecs + coilSizing (calcExcitationSystem) ──────
+    const I_Bn     = excitationData?.electricalSpecs?.I_B_Nominal_A;
+    const G_B      = excitationData?.coilSizing?.weight_copper_kg; // clé exacte du return
+
+    // ── Réactances — reactances_pu (calcMachineParameters) ───────────────────
+    const pu       = (dynParams as any)?.reactances_pu;
+    const xSigma   = reactancesData?.xSigma;              // dans safeReactances
+    const xd       = pu?.x_d;
+    const xq       = pu?.x_q;
+    const xd_prime = pu?.x_d_prime;
+    const x2       = pu?.x_2;
+
+    // ── Constantes de temps — timeConstants_s (calcMachineParameters) ─────────
+    const tc       = (dynParams as any)?.timeConstants_s;
+    const Td0      = tc?.T_d0;
+    const Td_prime = tc?.T_d_prime;
+    const Ta       = tc?.T_a;
+
+    // ── Performances ──────────────────────────────────────────────────────────
+    const Icc0     = (shortCircuitData as any)?.results_pu?.I_cc0;   // calcShortCircuitCurrents
+    const Iccn     = (shortCircuitData as any)?.results_pu?.I_ccn;
+    const Mmax     = (overloadData as any)?.static_overload_S;        // calcStaticOverload
+    const SigmaP   = losses_kW.total_SigmaP;
+    const eta      = efficiency.eta_percentage;
 
     return [
-      { category: '1. Entrées',             label: 'Puissance nominale',              symbol: 'Pn',         value: fmt(inputs.Pn, 0),                          unit: 'kW'     },
-      { category: '1. Entrées',             label: 'Tension nominale (ligne)',         symbol: 'Un',         value: fmt(inputs.Un, 0),                          unit: 'V'      },
-      { category: '1. Entrées',             label: 'Facteur de puissance',             symbol: 'cos(phi)',   value: fmt(inputs.cosPhi, 2),                      unit: ''       },
-      { category: '1. Entrées',             label: 'Fréquence',                        symbol: 'f',          value: fmt(inputs.f, 0),                           unit: 'Hz'     },
-      { category: '1. Entrées',             label: 'Vitesse nominale',                 symbol: 'nn',         value: fmt(inputs.nn, 0),                          unit: 'tr/min' },
-      { category: '1. Entrées',             label: 'Nombre de phases',                 symbol: 'm',          value: fmt(inputs.m, 0),                           unit: ''       },
-      { category: '2. Grandeurs Nominales', label: 'Tension de phase',                 symbol: 'Uph',        value: fmt(Uph, 2),                                unit: 'V'      },
-      { category: '2. Grandeurs Nominales', label: 'Puissance apparente',              symbol: 'Sn',         value: fmt(nominal.Sn, 1),                         unit: 'kVA'    },
-      { category: '2. Grandeurs Nominales', label: 'Courant nominal stator',           symbol: 'In',         value: fmt(nominal.In, 2),                         unit: 'A'      },
-      { category: '2. Grandeurs Nominales', label: 'Paires de pôles',                  symbol: 'p',          value: fmt(p, 0),                                  unit: ''       },
-      { category: '3. Dimensions',          label: "Diamètre intérieur stator",        symbol: 'D',          value: fmt(mainDimensions.D, 1),                   unit: 'cm'     },
-      { category: '3. Dimensions',          label: 'Diamètre extérieur normé',         symbol: 'Da',         value: fmt(mainDimensions.DaNorm, 1),               unit: 'cm'     },
-      { category: '3. Dimensions',          label: 'Pas polaire',                      symbol: 'tau',        value: fmt(mainDimensions.tau, 3),                 unit: 'cm'     },
-      { category: '3. Dimensions',          label: 'Longueur totale (l1)',             symbol: 'l1',         value: fmt(mainDimensions.l1, 2),                  unit: 'cm'     },
-      { category: '4. Stator',              label: 'Nombre de spires par phase',       symbol: 'w1',         value: fmt(stator.w1, 0),                          unit: ''       },
-      { category: '4. Stator',              label: 'Résistance bobinage (75°C)',        symbol: 'Ra75',       value: fmt(stator.Ra75, 4),                        unit: 'Ω'      },
-      { category: '4. Stator',              label: 'Poids cuivre stator',              symbol: 'Gm',         value: fmt(stator.Gm, 2),                          unit: 'kg'     },
-      { category: '14. Bilan des pertes',   label: 'Pertes fer culasse P_c',           symbol: 'P_c',        value: fmt(losses_kW.iron_yoke_Pc, 2),              unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'Pertes fer dents P_cd',            symbol: 'P_cd',       value: fmt(losses_kW.iron_teeth_Pcd, 2),            unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'Pertes surface pôles P_sur',       symbol: 'P_sur',      value: fmt(losses_kW.pole_surface_Psur, 2),         unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'Pertes mécaniques P_mec',          symbol: 'P_mec',      value: fmt(losses_kW.mechanical_Pmec, 2),           unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'Pertes électriques stator P_elec', symbol: 'P_elec',     value: fmt(losses_kW.stator_copper_Pelec, 2),       unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'Pertes supplémentaires P_sup',     symbol: 'P_sup',      value: fmt(losses_kW.supplementary_Psup, 2),        unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'Pertes excitation P_B',            symbol: 'P_B',        value: fmt(losses_kW.excitation_PB, 2),             unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'SOMME TOTALE DES PERTES',          symbol: 'SigmaP',     value: fmt(losses_kW.total_SigmaP, 1),              unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'Puissance active utile P_n',       symbol: 'P_n',        value: fmt(efficiency.P_active_nominal_kW, 1),      unit: 'kW'   },
-      { category: '14. Bilan des pertes',   label: 'RENDEMENT GLOBAL',                 symbol: 'eta',        value: fmt(efficiency.eta_percentage, 2),           unit: '%'    },
+      // ─── 1. Cahier des charges ───────────────────────────────────────────────
+      { category: '1. Cahier des charges', label: 'Puissance apparente nominale',  symbol: 'Sn',       value: fmt(Sn_kVA, 0),    unit: 'kVA'    },
+      { category: '1. Cahier des charges', label: 'Tension nominale (entre phases)', symbol: 'Unl',    value: fmt(Unl, 0),       unit: 'V'      },
+      { category: '1. Cahier des charges', label: 'Facteur de puissance',           symbol: 'cos(phi)', value: fmt(cosPhi, 2),   unit: ''       },
+      { category: '1. Cahier des charges', label: 'Vitesse nominale',               symbol: 'nn',       value: fmt(nn, 0),        unit: 'tr/min' },
+      { category: '1. Cahier des charges', label: 'Nombre de pôles',                symbol: '2p',       value: fmt(twop, 0),      unit: ''       },
+
+      // ─── 2. Dimensions ───────────────────────────────────────────────────────
+      { category: '2. Dimensions', label: 'Diamètre intérieur stator', symbol: 'D',   value: fmt(D, 1),    unit: 'cm' },
+      { category: '2. Dimensions', label: 'Diamètre extérieur stator', symbol: 'Da',  value: fmt(Da, 1),   unit: 'cm' },
+      { category: '2. Dimensions', label: 'Pas polaire',               symbol: 'tau', value: fmt(tau, 2),  unit: 'cm' },
+      { category: '2. Dimensions', label: 'Longueur du fer actif',     symbol: 'l',   value: fmt(l, 1),    unit: 'cm' },
+      { category: '2. Dimensions', label: 'Entrefer',                  symbol: 'delta', value: fmt(delta, 2), unit: 'cm' },
+
+      // ─── 3. Stator ───────────────────────────────────────────────────────────
+      { category: '3. Stator', label: "Nombre d'encoches",            symbol: 'Z1',   value: fmt(Z1, 0),   unit: ''   },
+      { category: '3. Stator', label: 'Encoches par pôle et par phase', symbol: 'q1', value: fmt(q1, 0),   unit: ''   },
+      { category: '3. Stator', label: 'Spires par phase',             symbol: 'w1',   value: fmt(w1, 0),   unit: ''   },
+      { category: '3. Stator', label: "Facteur d'enroulement",        symbol: 'K01',  value: fmt(K01, 3),  unit: ''   },
+      { category: '3. Stator', label: 'Résistance de bobinage (75°C)', symbol: 'Ra75', value: fmt(Ra75, 3), unit: 'Ω'     },
+      { category: '3. Stator', label: 'Poids cuivre stator',          symbol: 'Gm',   value: fmt(Gm, 2),   unit: 'kg' },
+
+      // ─── 4. Rotor ────────────────────────────────────────────────────────────
+      { category: '4. Rotor', label: "Largeur de l'épanouissement polaire", symbol: 'bp',  value: fmt(bp, 3),  unit: 'cm' },
+      { category: '4. Rotor', label: 'Largeur du noyau polaire',             symbol: 'bM',  value: fmt(bM, 3),  unit: 'cm' },
+      { category: '4. Rotor', label: 'Hauteur du noyau polaire',             symbol: 'hM',  value: fmt(hM, 2),  unit: 'cm' },
+      { category: '4. Rotor', label: "Courant d'excitation nominal",         symbol: 'IBn', value: fmt(I_Bn, 1), unit: 'A'  },
+      { category: '4. Rotor', label: "Poids cuivre d'excitation",            symbol: 'GB',  value: fmt(G_B, 2),  unit: 'kg' },
+
+      // ─── 5. Réactances ───────────────────────────────────────────────────────
+      { category: '5. Reactances', label: 'Réactance de dispersion statorique', symbol: "x_sigma", value: fmt(xSigma, 3), unit: 'p.u.' },
+      { category: '5. Reactances', label: 'Réactance synchrone longitudinale',  symbol: 'xd',      value: fmt(xd, 3),     unit: 'p.u.' },
+      { category: '5. Reactances', label: 'Réactance synchrone transversale',   symbol: 'xq',      value: fmt(xq, 3),     unit: 'p.u.' },
+      { category: '5. Reactances', label: "Réactance transitoire longitudinale", symbol: "x'd",    value: fmt(xd_prime, 3), unit: 'p.u.' },
+      { category: '5. Reactances', label: "Réactance d'ordre inverse",          symbol: 'x2',      value: fmt(x2, 3),     unit: 'p.u.' },
+
+      // ─── 6. Constantes de temps ──────────────────────────────────────────────
+      { category: '6. Constantes de temps', label: "Constante de temps à vide",       symbol: 'Td0',  value: fmt(Td0, 3),     unit: 's' },
+      { category: '6. Constantes de temps', label: "Constante de temps transitoire",  symbol: "T'd",  value: fmt(Td_prime, 3), unit: 's' },
+      { category: '6. Constantes de temps', label: "Constante de temps d'induit",     symbol: 'Ta',   value: fmt(Ta, 3),      unit: 's' },
+
+      // ─── 7. Performances ─────────────────────────────────────────────────────
+      { category: '7. Performances', label: 'Courant de court-circuit à vide',   symbol: 'Icc0',  value: fmt(Icc0, 3),   unit: 'p.u.' },
+      { category: '7. Performances', label: 'Courant de court-circuit nominal',  symbol: 'Iccn',  value: fmt(Iccn, 3),   unit: 'p.u.' },
+      { category: '7. Performances', label: 'Surcharge statique',                symbol: 'Mmax*', value: fmt(Mmax, 2),   unit: 'p.u.' },
+      { category: '7. Performances', label: 'Pertes totales',                    symbol: 'SigmaP', value: fmt(SigmaP, 1), unit: 'kW'  },
+      { category: '7. Performances', label: 'Rendement nominal',                 symbol: 'eta',   value: fmt(eta, 2),    unit: '%'   },
     ];
   };
 

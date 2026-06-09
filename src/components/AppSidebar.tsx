@@ -25,6 +25,8 @@ const STEPS = [
   { path: '/step/14', label: 'Pertes et Rendement', icon: Gauge, step: 14 },
 ];
 
+
+
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
@@ -41,7 +43,7 @@ export function AppSidebar() {
 
   return (
     <aside
-      className={`flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-200 ${
+      className={`flex min-h-0 flex-col bg-sidebar border-r border-sidebar-border transition-all duration-200 overflow-y-auto overscroll-contain ${
         collapsed ? 'w-16' : 'w-64'
       }`}
     >
@@ -67,12 +69,6 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors shrink-0"
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
       </div>
 
       {/* Navigation */}

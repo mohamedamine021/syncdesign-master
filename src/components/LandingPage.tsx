@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Settings2 } from 'lucide-react';
+import { ThemeToggle, useThemeMode } from './ThemeToggle';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 // 👇 CORRECTION ICI : On déclare chaque image manuellement car moteur8 est un .png !
@@ -92,17 +93,30 @@ function Carousel() {
 // ─── Page principale ──────────────────────────────────────────────────────────
 export function LandingPage() {
   const navigate = useNavigate();
+  const { theme } = useThemeMode();
+
+  const backgroundGradient =
+    theme === 'dark'
+      ? 'linear-gradient(160deg, #070a14 0%, #0d1525 55%, #091220 100%)'
+      : 'linear-gradient(160deg, #f8fafc 0%, #e2e8f0 55%, #f8fafc 100%)';
+
+  const primaryTextColor = theme === 'dark' ? '#ffffff' : '#0f172a';
+  const secondaryTextColor = theme === 'dark' ? 'rgba(148,163,184,0.75)' : 'rgba(71,85,105,0.85)';
 
   return (
     <div
       className="h-screen w-full overflow-hidden flex flex-col"
       style={{
-        background: 'linear-gradient(160deg, #070a14 0%, #0d1525 55%, #091220 100%)',
+        background: backgroundGradient,
         fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
       }}
     >
       {/* ═══ HAUT ════════════════════════════════════════════════════════════ */}
-      <header className="flex-none flex flex-col items-center pt-8 pb-4 px-6 select-none">
+      <header className="relative flex-none flex flex-col items-center pt-8 pb-4 px-6 select-none">
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeToggle />
+        </div>
+
         {/* Logo avec halo */}
         <div className="relative mb-4">
           {/* Halo diffus */}
@@ -122,8 +136,8 @@ export function LandingPage() {
 
         {/* Titre */}
         <h1
-          className="text-3xl font-bold tracking-tight text-white mb-1"
-          style={{ letterSpacing: '-0.02em' }}
+          className="text-3xl font-bold tracking-tight mb-1"
+          style={{ color: primaryTextColor, letterSpacing: '-0.02em' }}
         >
           Bienvenue à{' '}
           <span
@@ -141,7 +155,7 @@ export function LandingPage() {
         {/* Sous-titre */}
         <p
           className="text-xs font-semibold tracking-[0.28em] uppercase"
-          style={{ color: 'rgba(148,163,184,0.75)' }}
+          style={{ color: secondaryTextColor }}
         >
           Édition Professionnelle
         </p>
@@ -165,7 +179,10 @@ export function LandingPage() {
       <footer className="flex-none flex flex-col items-center gap-4 pt-3 pb-8 px-6">
 
         {/* Séparateur */}
-        <div className="w-full max-w-lg h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+        <div
+          className="w-full max-w-lg h-px"
+          style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(107,114,128,0.16)' }}
+        />
 
         {/* À propos */}
         <div className="flex items-start gap-3 max-w-lg w-full">
@@ -178,11 +195,14 @@ export function LandingPage() {
           <div>
             <p
               className="text-xs font-semibold mb-0.5"
-              style={{ color: 'rgba(203,213,225,0.9)', letterSpacing: '0.01em' }}
+              style={{ color: theme === 'dark' ? 'rgba(203,213,225,0.9)' : 'rgba(51,65,85,0.9)', letterSpacing: '0.01em' }}
             >
               À propos de l'application
             </p>
-            <p className="text-xs leading-relaxed" style={{ color: 'rgba(100,116,139,0.95)' }}>
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: theme === 'dark' ? 'rgba(100,116,139,0.95)' : 'rgba(75,85,99,0.9)' }}
+            >
               SYNCDESIGN PRO est un outil expert de dimensionnement d'alternateurs synchrones.
               Il guide l'ingénieur pas à pas — des grandeurs nominales jusqu'au bilan énergétique
               final — avec calculs physiques précis et export complet des résultats.
