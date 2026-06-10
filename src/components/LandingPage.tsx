@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Settings2 } from 'lucide-react';
-import { ThemeToggle, useThemeMode } from './ThemeToggle';
+import { ThemeToggle } from './ThemeToggle';
+import { useTheme } from '@/context/ThemeContext';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 // 👇 CORRECTION ICI : On déclare chaque image manuellement car moteur8 est un .png !
@@ -93,7 +94,7 @@ function Carousel() {
 // ─── Page principale ──────────────────────────────────────────────────────────
 export function LandingPage() {
   const navigate = useNavigate();
-  const { theme } = useThemeMode();
+  const { theme } = useTheme();
 
   const backgroundGradient =
     theme === 'dark'

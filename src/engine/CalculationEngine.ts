@@ -1064,7 +1064,6 @@ export class CalculationEngine {
     const Kf = 0.93;
 
     // a - Pertes dans le fer de la culasse (P_c)
-    // Volume torique réel de la culasse (diamètre moyen × section × périmètre)
     const hc_cm = (stator.hc || 6.2);
     const D_moy_culasse = dim.D + 2 * (stator.he / 10) + hc_cm;
     const V_c_dm3 = Math.PI * D_moy_culasse * hc_cm * dim.l1 * Kf * 1e-3;
@@ -1075,48 +1074,72 @@ export class CalculationEngine {
 
     // b - Pertes dans le fer des dents statoriques (P_cd)
     const Z1 = stator.Z1;
-    const bd1_cm = stator.bd1;                 // Width of stator tooth (cm)
-    const he_cm_14 = (stator.he || 68) / 10;   // Slot height in cm
+    const bd1_cm = stator.bd1;
+    const he_cm_14 = (stator.he || 68) / 10;
     const G_d = Z1 * bd1_cm * he_cm_14 * dim.l1 * Kf * gamma_c * 1e-3;
     const rho_cd = (getSpecificLoss(B_d, 0) || 4.3);
     const P_cd_kW = Math.round(k_d * rho_cd * G_d * 1e-3 * 100) / 100;
 
     // c - Pertes de surface dans les épanouissements polaires (P_sur)
-    const b_ou_cm = (stator.be || 15.2) / 10;
-    const ratio_bou_delta = b_ou_cm / airGap.delta;
-    const beta_0 = getBeta0(ratio_bou_delta);
-    
-    const B_delta_0 = stator.Bd0 || 7380;
-    const B_0 = beta_0 * airGap.Kdelta * B_delta_0;
+const b_ou_cm = (stator.be || 15.2) / 10;
+const ratio_bou_delta = b_ou_cm / airGap.delta;
+const beta_0 = getBeta0(ratio_bou_delta);
 
-    const n_rpm = (60 * inp.f) / nom.p;
-    const k_0 = 6;
-    
-    // Calcul de p_sur (W/m2)
-    const p_sur = k_0 * Math.pow((stator.Z1 * n_rpm) / 10000, 1.5) * Math.pow(stator.t1 / 1000, 2) * Math.pow(B_0 / 1000, 2);
-    
-    const alpha_0 = 0.73;
-    const P_sur_kW = Math.round(0.6 * (2 * nom.p) * alpha_0 * dim.tau * dim.l1 * p_sur * 1e-7 * 100) / 100;
+const B_delta_0 = stator.Bd0 || 7380;
+// FIX : B_0 doit être en Tesla (Bd0 est en Gauss → ÷ 10000)
+const B_0_T = (beta_0 * airGap.Kdelta * B_delta_0) / 10000;
 
+const n_rpm = (60 * inp.f) / nom.p;
+const k_0 = 6;
+
+// FIX : t1 en cm (pas en mm/1000), surface en cm²
+// Formule Kopylov : p_sur [W/cm²] = k0 × (Z1·n/1e4)^1.5 × t1[cm]² × B0[T]²
+const t1_cm = (stator.t1 && stator.t1 > 0) ? stator.t1 / 10 : 1.8;
+
+const p_sur = k_0
+  * Math.pow((stator.Z1 * n_rpm) / 10000, 1.5)
+  * Math.pow(t1_cm, 2)
+  * Math.pow(B_0_T, 2);
+
+// P_sur [kW] = 0.6 × 2p × α0 × τ[cm] × l1[cm] × p_sur[W/cm²] × 1e-3
+const alpha_0 = 0.73;
+const P_sur_kW = Math.round(
+  0.6 * (2 * nom.p) * alpha_0 * dim.tau * dim.l1 * p_sur * 1e-3 * 100
+) / 100;
     // d - Pertes mécaniques (P_mec)
     const v_p = (Math.PI * (dim.D / 100) * n_rpm) / 60;
-    const P_mec_kW = Math.round(0.8 * (2 * nom.p) * Math.pow(v_p / 40, 3) * Math.sqrt(dim.l1 / 19) * 100) / 100;
+    const P_mec_kW = Math.round(
+      0.8 * (2 * nom.p) * Math.pow(v_p / 40, 3) * Math.sqrt(dim.l1 / 19) * 100
+    ) / 100;
 
     // e - Pertes électriques dans le stator (P_elec)
-    // r_a75 peut venir de reactances.r_a75, reactances.r_a, ou stator.Ra75 (Ω absolu → converti en p.u.)
-    const r_a75_raw = reactances?.r_a75 ?? reactances?.r_a ?? reactances?.Ra75pu ?? null;
-    // Si on reçoit Ra75 en Ohms absolus (>0.5 probablement p.u. déjà, sinon convertir)
-    const r_a75 = r_a75_raw != null
-      ? r_a75_raw
-      : (stator.Ra75 != null ? stator.Ra75 : 0.02);
+    // FIX : r_a75 doit être en Ω absolus.
+    // On privilégie reactances.r_a75 (passé en Ω depuis Step14),
+    // puis stator.Ra75 (Ω absolus), puis conversion depuis p.u. via Zbase.
+    const Uph   = inp.Un / Math.sqrt(3);
+    const Zbase = Math.pow(Uph, 2) / ((nom.Sn * 1000) / inp.m);
+
+    const r_a75_raw = reactances?.r_a75 ?? null;
+    let r_a75: number;
+
+    if (r_a75_raw != null && r_a75_raw > 0) {
+      // Valeur transmise depuis Step14 (déjà en Ω absolus)
+      r_a75 = r_a75_raw;
+    } else if (stator.Ra75 != null && stator.Ra75 > 0) {
+      // Fallback : Ra75 stocké en Ω dans StatorDesign
+      r_a75 = stator.Ra75;
+    } else {
+      // Dernier recours : conversion p.u. → Ω via Zbase
+      const Ra75pu = reactances?.r_a ?? reactances?.Ra75pu ?? stator.Ra75pu ?? 0.02;
+      r_a75 = Ra75pu * Zbase;
+    }
+
     const P_elec_kW = Math.round(inp.m * Math.pow(nom.In, 2) * r_a75 * 1e-3 * 10) / 10;
 
-    // f - Pertes supplémentaires (P_sup)
-    // CORRECTION : 0.5% de Pn (puissance active nominale), et non 5% de Sn
+    // f - Pertes supplémentaires (P_sup) — 0.5 % de Pn
     const P_sup_kW = Math.round(0.005 * inp.Pn * 100) / 100;
 
     // g - Pertes d'excitation (P_B)
-    // Protection défensive : recalculer si electricalSpecs absent ou incomplet
     const delta_U_balais = 1.0;
     const eta_B = 0.89;
 
@@ -1125,27 +1148,25 @@ export class CalculationEngine {
 
     if (rotorParams?.electricalSpecs?.I_B_Nominal_A != null &&
         rotorParams?.electricalSpecs?.R_B_75_Ohm   != null) {
-      // Cas normal : excitationData complet (issu de calcExcitationSystem)
-      I_B_nom  = rotorParams.electricalSpecs.I_B_Nominal_A;
+      I_B_nom   = rotorParams.electricalSpecs.I_B_Nominal_A;
       R_B75_val = rotorParams.electricalSpecs.R_B_75_Ohm;
     } else {
-      // Fallback : recalculer excitation à la volée avec les données disponibles
-      const F_Bn_fallback = 4500; // valeur par défaut raisonnable
+      const F_Bn_fallback = 4500;
       const excFallback = CalculationEngine.calcExcitationSystem(nom, dim, airGap, F_Bn_fallback, inp.f);
-      I_B_nom  = excFallback.electricalSpecs.I_B_Nominal_A;
+      I_B_nom   = excFallback.electricalSpecs.I_B_Nominal_A;
       R_B75_val = excFallback.electricalSpecs.R_B_75_Ohm;
     }
 
-    const P_B_Joule = Math.pow(I_B_nom, 2) * R_B75_val;
+    const P_B_Joule  = Math.pow(I_B_nom, 2) * R_B75_val;
     const P_B_Balais = (2 * delta_U_balais * I_B_nom) / eta_B;
-    const P_B_kW = Math.round((P_B_Joule + P_B_Balais) * 1e-3 * 10) / 10;
+    const P_B_kW     = Math.round((P_B_Joule + P_B_Balais) * 1e-3 * 10) / 10;
 
     // h - Somme des pertes (Sigma P)
     const Sigma_P = P_c_kW + P_cd_kW + P_sur_kW + P_mec_kW + P_elec_kW + P_sup_kW + P_B_kW;
 
     // i - Rendement final (eta)
     const true_cosPhi = inp.cosPhi || 0.8;
-    const P_n_kW = nom.Sn * true_cosPhi;
+    const P_n_kW  = nom.Sn * true_cosPhi;
     const rendement = 1 - (Sigma_P / (P_n_kW + Sigma_P));
 
     return {
